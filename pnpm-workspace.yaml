@@ -1,0 +1,15 @@
+packages:
+  - packages/*
+  - playground
+
+# Single source of truth for shared dependency versions.
+# Reference them from any workspace package with "catalog:".
+catalog:
+  "@nuxt/kit": ^4.6.4
+  "@types/node": ^24.0.0
+  nuxt: ^4.6.4
+  # unbuild's declaration step (rollup-plugin-dts) peers on TypeScript ^5.9.
+  typescript: ~5.9.3
+  unbuild: ^3.6.1
+  vitest: ^5.1.0
+  zod: ^4.6.7

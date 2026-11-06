@@ -1,0 +1,46 @@
+export {
+  CapabilitySchema,
+  DOTTED_ID_PATTERN,
+  ExtensionIdSchema,
+  ExtensionManifestSchema,
+  HOOK_NAME_PATTERN,
+  HookNameSchema,
+  ModuleReferenceSchema,
+  NAV_PATH_PATTERN,
+  NavigationItemSchema,
+  OrderSchema,
+  OutletNameSchema,
+  OutletSlotDefinitionSchema,
+  PermissionDeclarationSchema,
+  PermissionRequirementSchema,
+  RoleSchema,
+  SEMVER_PATTERN,
+  SemverSchema,
+  ServerHookSubscriptionSchema,
+  ServerHookTypeSchema,
+  SLUG_PATTERN,
+} from './schema'
+
+export {
+  defineExtensionManifest,
+  ManifestValidationError,
+  parseManifest,
+  validateManifest,
+} from './manifest'
+
+export type {
+  ExtensionManifest,
+  ExtensionManifestInput,
+  ManifestIssue,
+  ManifestValidationResult,
+  NavigationItem,
+  NavigationItemInput,
+  OutletSlotDefinition,
+  OutletSlotDefinitionInput,
+  PermissionDeclaration,
+  PermissionDeclarationInput,
+  PermissionRequirement,
+  ServerHookSubscription,
+  ServerHookSubscriptionInput,
+  ServerHookType,
+} from './manifest'
