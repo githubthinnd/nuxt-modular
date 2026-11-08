@@ -19,7 +19,7 @@ catalog:
   "@types/node": ^24.0.0
   "@vue/test-utils": ^2.5.1
   db0: ^0.3.4
-  h3: ^1.15.11
+  h3: ^2.0.8
   happy-dom: ^21.0.4
   jiti: ^2.7.0
   nitropack: ^2.13.6
