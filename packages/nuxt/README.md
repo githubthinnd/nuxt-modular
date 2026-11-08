@@ -1,5 +1,7 @@
 # nuxt-modular
 
+<p align="center"><img src="https://raw.githubusercontent.com/githubthinnd/nuxt-modular/master/assets/demo.gif" alt="nuxt-modular playground demo" width="760"></p>
+
 Turn a Nuxt app into an extensible **host platform**. Independent extensions
 plug in components, pages, navigation, permissions, plugins, server routes and
 server hooks — without editing host templates and without hydration mismatches.
