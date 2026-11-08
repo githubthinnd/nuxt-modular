@@ -1,9 +1,23 @@
 {
   "name": "@nuxt-modular/cli",
   "version": "0.1.0",
-  "description": "Scaffolding and diagnostics for nuxt-modular extensions: make:*, list, validate.",
+  "description": "Command line for nuxt-modular: scaffold extensions (make:extension, make:migration, ...) and validate manifests in CI.",
+  "keywords": [
+    "nuxt-modular",
+    "nuxt",
+    "cli",
+    "scaffold",
+    "generator",
+    "validate",
+    "extensions",
+    "plugin-system"
+  ],
   "license": "MIT",
   "author": "Nhữ Duy Thìn",
+  "homepage": "https://github.com/githubthinnd/nuxt-modular#readme",
+  "bugs": {
+    "url": "https://github.com/githubthinnd/nuxt-modular/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/githubthinnd/nuxt-modular.git",
@@ -25,13 +39,6 @@
   "files": [
     "bin",
     "dist"
-  ],
-  "keywords": [
-    "nuxt",
-    "modular",
-    "cli",
-    "scaffold",
-    "generator"
   ],
   "scripts": {
     "build": "unbuild",

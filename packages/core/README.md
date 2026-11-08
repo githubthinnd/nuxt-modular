@@ -1,6 +1,17 @@
 # @nuxt-modular/core
 
-Framework-agnostic building blocks of [nuxt-modular](../nuxt/README.md):
+> Framework-agnostic core of [nuxt-modular](https://www.npmjs.com/package/nuxt-modular), the plugin and extension system for Nuxt:
+> extension manifest schemas, a serializable registry, an action/filter hook bus, migration and seeder runners, SQL state stores
+> (SQLite, PostgreSQL, MySQL), semver compatibility checks.
+
+[![npm](https://img.shields.io/npm/v/@nuxt-modular/core?color=4f46e5)](https://www.npmjs.com/package/@nuxt-modular/core)
+[![license](https://img.shields.io/npm/l/@nuxt-modular/core?color=4f46e5)](https://github.com/githubthinnd/nuxt-modular/blob/master/LICENSE)
+
+```bash
+npm install @nuxt-modular/core
+```
+
+Building blocks:
 
 - `defineExtensionManifest`, `validateManifest`, `parseManifest` and the Zod schemas
 - registry functions over a JSON-serializable state: `registerExtension`, `resolveSlots`,
@@ -24,3 +35,5 @@ validation, for code that ships to the browser.
 the Nuxt module and `@nuxt-modular/cli`. Never import it from browser code.
 
 Nuxt users do not need to install this package: `nuxt-modular` exposes it as `#modular`.
+
+Documentation: [User guide](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/README.md) · [API reference](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/13-api-reference.md) · MIT

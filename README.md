@@ -1,8 +1,14 @@
-# nuxt-modular
+<h1 align="center">nuxt-modular</h1>
 
-Monorepo for **[nuxt-modular](./packages/nuxt/README.md)**: a Nuxt module that turns
-an app into an extensible host platform (outlets, navigation, permissions, pages,
-server routes and an action/filter hook bus, all SSR-safe).
+<p align="center"><strong>A plugin and extension system for Nuxt.</strong> Build modular, extensible Nuxt apps with outlets, permissions,
+feature toggles, hooks, and database migrations (SQLite, PostgreSQL, MySQL).</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/nuxt-modular"><img alt="npm version" src="https://img.shields.io/npm/v/nuxt-modular?color=4f46e5&label=npm"></a>
+  <a href="https://github.com/githubthinnd/nuxt-modular/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/githubthinnd/nuxt-modular/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="./LICENSE"><img alt="license" src="https://img.shields.io/npm/l/nuxt-modular?color=4f46e5"></a>
+  <img alt="Nuxt 3.13+ and 4" src="https://img.shields.io/badge/Nuxt-3.13%2B%20%7C%204-00dc82">
+</p>
 
 <p align="center">
   <img src="./assets/demo.gif" alt="Playground demo: X-ray of extension contributions, role-based navigation, a quiz scored by a server filter hook with settings, and an extension switched off at runtime" width="860">
@@ -18,7 +24,7 @@ take the quiz (a server filter hook adds a bonus configured in the manifest), th
 | `packages/cli` | `@nuxt-modular/cli` | `nuxt-modular make:*`, `list`, `validate` |
 | `playground` | — | Host app with `quiz`, `analytics-banner` and `broken-widget` extensions |
 
-Usage documentation: [packages/nuxt/README.md](./packages/nuxt/README.md) ·
+**User guide: [guide/](./guide/README.md)** · Module overview: [packages/nuxt/README.md](./packages/nuxt/README.md) ·
 CLI: [packages/cli/README.md](./packages/cli/README.md) · [CHANGELOG](./CHANGELOG.md) ·
 [CONTRIBUTING](./CONTRIBUTING.md) · [SECURITY](./SECURITY.md).
 

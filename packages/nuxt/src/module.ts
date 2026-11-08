@@ -99,7 +99,8 @@ export interface ModuleOptions {
   /**
    * Per-extension settings, deep-merged over `manifest.config` and read with
    * `useExtensionConfig(id)` / `useModularExtensionConfig(id)`. Public: they
-   * ship to the browser. Environment: `NUXT_PUBLIC_MODULAR_CONFIG_<ID>_<KEY>`.
+   * ship to the browser. Keys declared here can be overridden at runtime with
+   * `NUXT_PUBLIC_MODULAR_CONFIG_<ID>_<KEY>` (camelCase keys become SNAKE_CASE).
    * @default {}
    */
   config: Record<string, JsonObject>

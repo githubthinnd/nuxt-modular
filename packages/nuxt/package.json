@@ -1,9 +1,39 @@
 {
   "name": "nuxt-modular",
   "version": "0.1.0",
-  "description": "Turn a Nuxt app into an extensible host platform: plug-in extensions with outlets, navigation, permissions, pages and server hooks.",
+  "description": "A plugin and extension system for Nuxt: build modular, extensible apps with outlets, permissions, feature toggles, hooks and SQLite, PostgreSQL or MySQL migrations.",
+  "keywords": [
+    "nuxt",
+    "nuxt-module",
+    "nuxt3",
+    "nuxt4",
+    "vue",
+    "modular",
+    "modular-architecture",
+    "plugin-system",
+    "plugins",
+    "extensions",
+    "extensible",
+    "slots",
+    "outlet",
+    "feature-flags",
+    "feature-toggles",
+    "permissions",
+    "hooks",
+    "migrations",
+    "seeders",
+    "sqlite",
+    "postgresql",
+    "mysql",
+    "ssr",
+    "typescript"
+  ],
   "license": "MIT",
   "author": "Nhữ Duy Thìn",
+  "homepage": "https://github.com/githubthinnd/nuxt-modular#readme",
+  "bugs": {
+    "url": "https://github.com/githubthinnd/nuxt-modular/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/githubthinnd/nuxt-modular.git",
@@ -26,15 +56,6 @@
   },
   "files": [
     "dist"
-  ],
-  "keywords": [
-    "nuxt",
-    "nuxt-module",
-    "modular",
-    "extensions",
-    "plugins",
-    "slots",
-    "outlet"
   ],
   "scripts": {
     "build": "nuxt-module-build prepare && nuxt-module-build build",

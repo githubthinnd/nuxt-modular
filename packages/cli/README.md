@@ -1,6 +1,10 @@
 # @nuxt-modular/cli
 
-Scaffolding and diagnostics for [nuxt-modular](../nuxt/README.md) extensions.
+> Command line for [nuxt-modular](https://www.npmjs.com/package/nuxt-modular): scaffold Nuxt extensions (`make:extension`,
+> `make:component`, `make:page`, `make:api`, `make:hook`, `make:migration`, `make:seeder`) and validate them in CI (`validate`).
+
+[![npm](https://img.shields.io/npm/v/@nuxt-modular/cli?color=4f46e5)](https://www.npmjs.com/package/@nuxt-modular/cli)
+[![license](https://img.shields.io/npm/l/@nuxt-modular/cli?color=4f46e5)](https://github.com/githubthinnd/nuxt-modular/blob/master/LICENSE)
 
 ```bash
 pnpm add -D @nuxt-modular/cli
@@ -27,4 +31,6 @@ Exit codes: `0` success, `1` validation failed, `2` usage error. Generators neve
 write outside the extension directory and refuse to overwrite without `--force`.
 
 Use `validate --strict` in CI to catch broken extensions before a build.
-Migrations and seeders run through Nitro tasks, see the module README.
+Migrations and seeders run through Nitro tasks; see the [user guide](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/07-data.md).
+
+Full documentation: [CLI chapter](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/10-cli.md) · MIT
