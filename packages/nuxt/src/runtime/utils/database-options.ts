@@ -4,6 +4,24 @@ import { normalizeDialect, type SqlDialect } from '@nuxt-modular/core/runtime'
 export const CONNECTORS = ['postgresql', 'mysql2', 'node-sqlite', 'better-sqlite3', 'libsql', 'pglite', 'planetscale', 'bun-sqlite', 'sqlite3'] as const
 export type ConnectorName = (typeof CONNECTORS)[number]
 
+/**
+ * The npm package each connector loads at runtime. db0 ≥ 0.4 imports it from db0's own location, which a strict
+ * package manager (pnpm) cannot resolve for a package installed in the *app*, so the module resolves the driver
+ * itself and hands it to the connector (`lib`). `import` is the specifier to load when it differs from the name.
+ */
+export const CONNECTOR_DRIVERS: Readonly<Partial<Record<ConnectorName, { readonly name: string; readonly import?: string }>>> = {
+  postgresql: { name: 'pg' },
+  mysql2: { name: 'mysql2', import: 'mysql2/promise' },
+  'better-sqlite3': { name: 'better-sqlite3' },
+  libsql: { name: '@libsql/client' },
+  pglite: { name: '@electric-sql/pglite' },
+  planetscale: { name: '@planetscale/database' },
+  sqlite3: { name: 'sqlite3' },
+}
+
+/** The db0 module that implements a connector (`libsql` lives in a sub-folder). */
+export const connectorModule = (connector: string): string => (connector === 'libsql' ? 'libsql/node' : connector)
+
 const SCHEMES: Record<string, ConnectorName> = {
   postgres: 'postgresql',
   postgresql: 'postgresql',

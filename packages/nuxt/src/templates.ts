@@ -152,7 +152,9 @@ export function seedersTemplate(extensions: readonly ScannedExtension[]): string
 }
 
 /** Nitro virtual `#nuxt-modular/database` — opens the configured db0 connector (or the user's handler). */
-export function databaseTemplate(database: { connector?: string; handler?: string; dialect: string; connectorFile?: string; db0File?: string } | undefined): string {
+export function databaseTemplate(
+  database: { connector?: string; handler?: string; dialect: string; connectorFile?: string; db0File?: string; driverFile?: string } | undefined,
+): string {
   if (!database) {
     return `export const connectorName = undefined\nexport const dialectName = undefined\nexport const createModularDatabase = undefined\n`
   }
@@ -170,7 +172,10 @@ export function databaseTemplate(database: { connector?: string; handler?: strin
     `import { createDatabase } from ${JSON.stringify(database.db0File)}`,
     `export const connectorName = ${JSON.stringify(database.connector)}`,
     `export const dialectName = ${JSON.stringify(database.dialect)}`,
-    `export const createModularDatabase = (options) => createDatabase(connector(options))`,
+    // db0 >= 0.4 cannot find the driver from its own location under pnpm: hand it over explicitly.
+    database.driverFile
+      ? `export const createModularDatabase = (options) => createDatabase(connector({ ...options, lib: () => import(${JSON.stringify(database.driverFile)}) }))`
+      : `export const createModularDatabase = (options) => createDatabase(connector(options))`,
     ``,
   ].join('\n')
 }

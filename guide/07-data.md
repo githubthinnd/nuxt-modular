@@ -27,6 +27,8 @@ modular: { database: { connector: 'postgresql' } }
 NUXT_MODULAR_DATABASE_URL=postgresql://user:pass@host/db
 ```
 
+The driver is resolved from **your app** at build time (a missing one fails the build with the exact `pnpm add` command), so it works with strict package managers such as pnpm.
+
 The connector is inferred from the URL scheme (`postgresql:`/`postgres:`, `mysql:`/`mariadb:`, `sqlite:`/`file:`,
 `libsql:`). Anything written in `nuxt.config` is compiled into the build, so **keep credentials in
 `NUXT_MODULAR_DATABASE_URL`**. Nothing database-related is bundled when `database` is unset.

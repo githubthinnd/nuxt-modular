@@ -23,10 +23,6 @@ updates:
       # Keep the types aligned with the oldest Node we run in CI and support (engines.node), not the newest Node.
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
-      # db0 is 0.x: a minor is a breaking change. 0.4 stops resolving drivers (pg, mysql2, …) itself and expects a `lib`
-      # option on connectors, which the generated database template must pass first. Patches are still accepted.
-      - dependency-name: db0
-        update-types: ['version-update:semver-major', 'version-update:semver-minor']
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }

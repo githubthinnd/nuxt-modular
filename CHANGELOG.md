@@ -33,6 +33,11 @@ pages, permissions, SSR-safe error boundaries, the server hook bus, feature togg
 - The store suite also runs on PostgreSQL itself on every test run, through PGlite (PostgreSQL compiled to WebAssembly).
 - CI job running the store suite against real PostgreSQL, MySQL and MariaDB servers.
 
+### Fixed
+
+- Database connectors work with db0 0.3 and 0.4: for 0.4 the module resolves the driver (`pg`, `mysql2`, `@libsql/client`, `@electric-sql/pglite`, …) from the app and passes it as `lib`; a missing driver fails the build with the install command.
+- The `libsql` connector pointed at a module that does not exist; it now loads `db0/connectors/libsql/node`.
+
 ### Changed
 
 - Playground UI: top bar with breadcrumbs, light/dark theme switch (cookie, SSR-safe) and an extension X-ray overlay (`X`).

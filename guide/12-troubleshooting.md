@@ -60,8 +60,8 @@ remove the `migrations:lock` key.
 Use portable SQL ([chapter 7](./07-data.md)): `VARCHAR` primary keys, no SQLite-only features, `?` placeholders. Test on the
 real target database in CI.
 
-**`Cannot find package 'pg'` (or `mysql2`).**
-Install the driver in the app that deploys the server: `pnpm add pg`.
+**`The "postgresql" database connector needs the \`pg\` package`** (or `mysql2`, `@libsql/client`, …).
+Install the driver in the **app** that deploys the server: `pnpm add pg`. The module looks for it in your project first, and fails the build early with this message when it is missing. This also applies to db0 0.4 and newer, which no longer find drivers on their own.
 
 **`nuxt task run` says tasks are unavailable.**
 Set `modular.tasks: true` and run it against the development server; production servers do not expose

@@ -17,6 +17,7 @@ import {
   defineNuxtModule,
   extendPages,
   resolvePath,
+  tryResolveModule,
   useLogger,
 } from '@nuxt/kit'
 import {
@@ -26,11 +27,12 @@ import {
   findMissingDependencies,
   type JsonObject,
   registerExtension,
+  satisfies,
   sortByDependencies,
 } from '@nuxt-modular/core'
 import { dirname, join, relative, resolve } from 'pathe'
 import { addDevtoolsTypes, setupDevtools } from './devtools'
-import { type DatabaseInput, resolveDatabaseInput } from './runtime/utils/database-options'
+import { CONNECTOR_DRIVERS, connectorModule, type DatabaseInput, resolveDatabaseInput } from './runtime/utils/database-options'
 import { glob } from 'tinyglobby'
 import {
   describeDir,
@@ -140,14 +142,16 @@ export const CORE_ALIAS = '#modular'
 /** Route meta key marking pages contributed by an extension (see runtime/middleware/extension-pages). */
 const EXTENSION_ROUTE_META = 'modularExtension'
 
-function readOwnVersion(): string | undefined {
+function readPackageVersion(file: string): string | undefined {
   try {
-    const pkg = JSON.parse(readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8')) as { version?: unknown }
+    const pkg = JSON.parse(readFileSync(file, 'utf8')) as { version?: unknown }
     return typeof pkg.version === 'string' ? pkg.version : undefined
   } catch {
     return undefined
   }
 }
+
+const readOwnVersion = (): string | undefined => readPackageVersion(fileURLToPath(new URL('../package.json', import.meta.url)))
 
 const TASKS = [
   'list',
@@ -349,14 +353,31 @@ export default defineNuxtModule<ModuleOptions>().with({
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : String(error))
     }
+    // db0 >= 0.4 loads drivers (pg, mysql2, …) from its own location, which pnpm cannot resolve for a package
+    // installed in the app. For those versions resolve the driver here (app first, then this module) and hand it
+    // over as `lib`; fail early with the fix. db0 0.3 finds its peers itself, so nothing is passed.
+    const db0File = database?.connector ? fileURLToPath(import.meta.resolve('db0')) : undefined
+    const db0Version = db0File ? readPackageVersion(resolve(dirname(db0File), '..', 'package.json')) : undefined
+    const driver = database?.connector && db0Version && satisfies(db0Version, '>=0.4.0') ? CONNECTOR_DRIVERS[database.connector] : undefined
+    let driverFile: string | undefined
+    if (driver) {
+      const resolved = await tryResolveModule(driver.import ?? driver.name, [nuxt.options.rootDir, import.meta.url])
+      if (!resolved) {
+        throw new Error(
+          `[nuxt-modular] The "${database?.connector}" database connector needs the \`${driver.name}\` package. Install it: pnpm add ${driver.name}`,
+        )
+      }
+      driverFile = resolved.startsWith('file:') ? fileURLToPath(resolved) : resolved
+    }
     const databaseModule = database && {
       connector: database.connector,
       dialect: database.dialect,
       ...(database.handler ? { handler: await resolvePath(database.handler) } : {}),
       ...(database.connector
         ? {
-            connectorFile: fileURLToPath(import.meta.resolve(`db0/connectors/${database.connector}`)),
-            db0File: fileURLToPath(import.meta.resolve('db0')),
+            connectorFile: fileURLToPath(import.meta.resolve(`db0/connectors/${connectorModule(database.connector)}`)),
+            db0File,
+            ...(driverFile ? { driverFile } : {}),
           }
         : {}),
     }
