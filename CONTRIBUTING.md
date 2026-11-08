@@ -34,4 +34,5 @@ Requires Node ≥ 22.12 and pnpm (see `packageManager`).
 ## Releasing (maintainers)
 
 1. Move *Unreleased* in `CHANGELOG.md` under the new version and bump the versions in `packages/*/package.json`.
-2. Tag `vX.Y.Z` on `master`. The `Release` workflow verifies, then publishes with npm provenance.
+2. Publish either by tagging `vX.Y.Z` on `master` (the `Release` workflow verifies, then publishes with npm provenance)
+   or by hand following [PUBLISHING.md](./PUBLISHING.md). Never both for the same version.
