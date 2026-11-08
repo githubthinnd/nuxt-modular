@@ -2,14 +2,44 @@ packages:
   - packages/*
   - playground
 
+# Dependencies allowed to run install scripts (pnpm blocks all others).
+allowBuilds:
+  # Installs/validates the platform binary used by Vite, Nuxt and unbuild.
+  esbuild: true
+
 # Single source of truth for shared dependency versions.
 # Reference them from any workspace package with "catalog:".
 catalog:
+  "@nuxt/cli": ^4.0.3
+  "@nuxt/devtools-kit": ^4.1.0
   "@nuxt/kit": ^4.6.4
+  "@nuxt/module-builder": ^1.0.3
+  "@nuxt/schema": ^4.6.4
+  "@playwright/test": ^1.65.0
   "@types/node": ^24.0.0
+  "@vue/test-utils": ^2.5.1
+  h3: ^1.15.11
+  happy-dom: ^21.0.4
+  jiti: ^2.7.0
+  nitropack: ^2.13.6
   nuxt: ^4.6.4
+  pathe: ^2.0.3
+  tinyglobby: ^0.2.17
   # unbuild's declaration step (rollup-plugin-dts) peers on TypeScript ^5.9.
   typescript: ~5.9.3
   unbuild: ^3.6.1
   vitest: ^5.1.0
+  vue: ^3.5.45
+  vue-router: ^5.4.0
+  vue-tsc: ^3.3.14
   zod: ^4.6.7
+
+minimumReleaseAgeExclude:
+  - "@playwright/test@1.65.0"
+  - playwright-core@1.65.0
+  - playwright@1.65.0
+
+peerDependencyRules:
+  allowedVersions:
+    # module-builder 1.0.x still declares @nuxt/cli ^3; Nuxt 4.6 ships CLI 4.
+    "@nuxt/module-builder>@nuxt/cli": "4"

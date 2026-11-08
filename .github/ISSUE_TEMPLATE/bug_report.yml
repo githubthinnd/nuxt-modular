@@ -1,0 +1,27 @@
+name: Bug report
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Include what you expected instead.
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: A minimal repository, or the manifest and steps to reproduce.
+    validations: { required: true }
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      placeholder: nuxt-modular 0.1.0, nuxt 4.6.4, node 24
+    validations: { required: true }
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      render: shell

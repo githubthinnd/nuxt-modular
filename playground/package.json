@@ -1,0 +1,27 @@
+{
+  "name": "nuxt-modular-playground",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxi dev",
+    "build": "nuxi build",
+    "generate": "nuxi generate",
+    "preview": "nuxi preview",
+    "verify:ssr": "node ../scripts/check-ssr.mjs",
+    "typecheck": "nuxi prepare && vue-tsc -b --noEmit && tsc -p e2e --noEmit",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "nuxt": "catalog:",
+    "vue": "catalog:",
+    "vue-router": "catalog:"
+  },
+  "devDependencies": {
+    "@nuxt/cli": "catalog:",
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vue-tsc": "catalog:"
+  }
+}
