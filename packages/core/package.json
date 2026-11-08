@@ -63,6 +63,8 @@
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.15",
     "@types/node": "catalog:",
+    "mysql2": "^3.24.6",
+    "pg": "^8.23.1",
     "typescript": "catalog:",
     "unbuild": "catalog:",
     "vitest": "catalog:"

@@ -288,6 +288,12 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.2
+      mysql2:
+        specifier: ^3.24.6
+        version: 3.24.6(@types/node@24.19.2)
+      pg:
+        specifier: ^8.23.1
+        version: 8.23.1
       typescript:
         specifier: 'catalog:'
         version: 5.9.3

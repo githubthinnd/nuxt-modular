@@ -4,9 +4,29 @@ updates:
     directory: /
     schedule: { interval: weekly }
     open-pull-requests-limit: 5
+    # Majors are reviewed by hand and arrive as separate PRs; only minor and patch updates are grouped.
     groups:
-      nuxt: { patterns: ['nuxt', '@nuxt/*', 'nitropack', 'h3', 'vue*'] }
-      tooling: { patterns: ['vitest', 'typescript', 'unbuild', '@playwright/*', 'happy-dom'] }
+      nuxt:
+        patterns: ['nuxt', '@nuxt/*', 'nitropack', 'vue*']
+        update-types: [minor, patch]
+      tooling:
+        patterns: ['vitest', 'unbuild', '@playwright/*', 'happy-dom']
+        update-types: [minor, patch]
+    ignore:
+      # Nitro 2 (Nuxt 3/4) is built on h3 v1; h3 v2 renames or removes createError, readBody, setResponseHeader, …
+      # Revisit when the module targets Nitro 3 / Nuxt 5.
+      - dependency-name: h3
+        update-types: ['version-update:semver-major']
+      # unbuild's declaration step and vue-tsc require TypeScript 5.x. Revisit when both support the native TypeScript 7.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      # Keep the types aligned with the oldest Node we run in CI and support (engines.node), not the newest Node.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      # db0 is 0.x: a minor is a breaking change. 0.4 stops resolving drivers (pg, mysql2, …) itself and expects a `lib`
+      # option on connectors, which the generated database template must pass first. Patches are still accepted.
+      - dependency-name: db0
+        update-types: ['version-update:semver-major', 'version-update:semver-minor']
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
