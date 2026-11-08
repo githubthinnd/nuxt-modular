@@ -1,6 +1,6 @@
 {
   "name": "nuxt-modular",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A plugin and extension system for Nuxt: build modular, extensible apps with outlets, permissions, feature toggles, hooks and SQLite, PostgreSQL or MySQL migrations.",
   "keywords": [
     "nuxt",

@@ -6,6 +6,11 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-08
+
+First stable release of `nuxt-modular`, `@nuxt-modular/core` and `@nuxt-modular/cli`. It includes outlets and slots, navigation,
+pages, permissions, SSR-safe error boundaries, the server hook bus, feature toggles, migrations and the Nuxt DevTools tab, plus:
+
 ### Added
 
 - **Compatibility**: manifests accept `requires: { modular, extensions }` (semver ranges). The module fails the build
@@ -33,8 +38,3 @@ All notable changes are documented here. The format follows
 - Playground UI: top bar with breadcrumbs, light/dark theme switch (cookie, SSR-safe) and an extension X-ray overlay (`X`).
 - Manifests are normalized with `requires` and `config` defaults.
 - The scanner moved from `nuxt-modular` to `@nuxt-modular/core/node` (re-exported internally; no public API change).
-
-## [0.1.0]
-
-Initial release: outlets, navigation, permissions, pages, server routes, action/filter hook bus,
-SSR-safe error boundaries, feature toggles, migrations and DevTools tab.

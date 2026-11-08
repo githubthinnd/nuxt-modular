@@ -73,7 +73,8 @@ If your migrations target PostgreSQL or MySQL, run them in CI against a real ser
 
 ## Upgrading
 
-The module follows [semantic versioning](https://semver.org); see the
-[CHANGELOG](https://github.com/githubthinnd/nuxt-modular/blob/master/CHANGELOG.md). Before 1.0, minor versions may
-include breaking changes, each called out in the changelog. After upgrading run `npx nuxi prepare` and
-`npx nuxt-modular validate`.
+The module follows [semantic versioning](https://semver.org): breaking changes only in major versions, new features in minor
+versions, fixes in patches. Every release is described in the
+[CHANGELOG](https://github.com/githubthinnd/nuxt-modular/blob/master/CHANGELOG.md). After upgrading run `npx nuxi prepare` and
+`npx nuxt-modular validate`. The three packages (`nuxt-modular`, `@nuxt-modular/core`, `@nuxt-modular/cli`) are released
+together with the same version number.
