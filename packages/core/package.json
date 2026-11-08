@@ -61,6 +61,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.15",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "unbuild": "catalog:",

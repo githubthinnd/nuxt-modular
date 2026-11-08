@@ -25,6 +25,7 @@ All notable changes are documented here. The format follows
 - **Databases**: `modular.database` (SQLite, PostgreSQL, MySQL/MariaDB through db0). Migration ledger, an atomic lock and
   toggles move to SQL tables; migrations and seeders receive a typed `db` and `dialect`; `useModularDatabase()`;
   `NUXT_MODULAR_DATABASE_URL`; custom `handler`; table `prefix`. Nitro storage stays the default.
+- The store suite also runs on PostgreSQL itself on every test run, through PGlite (PostgreSQL compiled to WebAssembly).
 - CI job running the store suite against real PostgreSQL, MySQL and MariaDB servers.
 
 ### Changed

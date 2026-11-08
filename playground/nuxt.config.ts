@@ -15,11 +15,9 @@ export default defineNuxtConfig({
     disabled,
     // Pending extension migrations run when the server starts (not while prerendering).
     migrations: { auto: true },
-    // Zero-setup SQLite (node:sqlite, Node >= 22.5). For production set NUXT_MODULAR_DATABASE_URL, e.g.
-    // postgresql://user:pass@host/db or mysql://user:pass@host/db, and `connector: 'postgresql' | 'mysql2'`.
-    database: process.env.PLAYGROUND_DB_CONNECTOR
-      ? { connector: process.env.PLAYGROUND_DB_CONNECTOR as 'postgresql' | 'mysql2' }
-      : 'sqlite:./.data/modular.sqlite',
+    // Zero-setup SQLite (node:sqlite, Node >= 22.5). Try another database with PLAYGROUND_DB, e.g.
+    // PLAYGROUND_DB=pglite:./.data/pg (PostgreSQL in WASM), postgresql://user:pass@host/db or mysql://user:pass@host/db.
+    database: process.env.PLAYGROUND_DB || 'sqlite:./.data/modular.sqlite',
     // `pnpm --dir playground exec nuxt task run modular:seed` (needs the dev server).
     tasks: true,
     config: { quiz: { bonusPoints: 5 } },
