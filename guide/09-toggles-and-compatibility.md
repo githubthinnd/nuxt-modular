@@ -56,7 +56,7 @@ dependsOn: ['core'],
 
 ```ts
 requires: {
-  modular: '^0.1.0',                // nuxt-modular versions this extension supports
+  modular: '^1.0.0',                // nuxt-modular versions this extension supports
   extensions: { core: '^2.0.0' },   // ranges for dependencies (each must be in dependsOn)
 }
 ```
@@ -68,7 +68,7 @@ If the host or a dependency does not satisfy a range, **the build fails** with e
 
 ```
 [nuxt-modular] Incompatible extensions:
-  - Extension "quiz" requires nuxt-modular ^2.0.0, but 0.1.0 is installed
+  - Extension "quiz" requires nuxt-modular ^2.0.0, but 1.0.0 is installed
   - Extension "grading" requires "quiz" ^3.0.0, but 1.2.0 is installed
 ```
 

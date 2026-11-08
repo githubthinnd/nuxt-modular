@@ -5,7 +5,7 @@ export default defineExtensionManifest({
   name: 'Quiz',
   version: '1.0.0',
   description: 'Course quizzes: a course tab, a progress widget, pages and a submit API.',
-  requires: { modular: '>=0.1.0' },
+  requires: { modular: '>=1.0.0' },
   // Defaults; the host overrides them with `modular.config.quiz` (nuxt.config) or the environment.
   config: { bonusPoints: 5 },
   permissions: [

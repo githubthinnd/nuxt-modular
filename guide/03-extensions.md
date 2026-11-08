@@ -39,7 +39,7 @@ export default defineExtensionManifest({
   description: 'Course quizzes',
   enabled: true,
   dependsOn: ['core'],
-  requires: { modular: '>=0.1.0', extensions: { core: '^2.0.0' } },
+  requires: { modular: '>=1.0.0', extensions: { core: '^2.0.0' } },
   config: { passingScore: 60 },
   permissions: [{ id: 'quiz.view', label: 'Take quizzes', defaultRoles: ['student'] }],
   navigation: [{ id: 'quiz', label: 'Quizzes', path: '/quiz', parent: 'sidebar', order: 20, permission: 'quiz.view' }],
