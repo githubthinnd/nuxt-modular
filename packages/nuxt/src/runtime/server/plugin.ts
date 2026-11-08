@@ -4,6 +4,7 @@ import { subscriptions } from '#nuxt-modular/server-hooks'
 import { describeError } from '../utils/describe-error'
 import { useModularConfig } from './config'
 import { setModularContext } from './context'
+import { closeModularDatabase } from './database'
 import { useModularMigrations } from './migrations'
 import { useModularToggles } from './toggles'
 import { useModularServerHooks } from './utils'
@@ -50,6 +51,7 @@ export default defineNitroPlugin((nitroApp) => {
     setModularContext(event, { getOverrides: () => toggles.getOverrides() })
     if (bus.hasHook('nitro:request', 'action')) await bus.callHook('nitro:request', event)
   })
+  nitroApp.hooks.hook('close', () => closeModularDatabase())
   nitroApp.hooks.hook('afterResponse', async (event) => {
     if (bus.hasHook('nitro:after-response', 'action')) await bus.callHook('nitro:after-response', event)
   })

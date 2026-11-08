@@ -8,16 +8,27 @@
  *
  * Run 1: every extension built → slots, order, permissions, error isolation, hooks, migrations.
  * Run 2: NUXT_MODULAR_DISABLED=analytics-banner,broken-widget → nothing of them remains.
- * Run 3: persistent toggle { quiz: false } in storage → quiz built but inactive everywhere.
+ * Run 3: persistent toggle { quiz: false } in the SQL toggles table → quiz built but inactive everywhere.
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs'
+import { DatabaseSync } from 'node:sqlite'
 import { join, resolve } from 'node:path'
 
 const playground = resolve(process.cwd())
 const publicDir = join(playground, '.output/public')
 const dataDir = join(playground, '.data')
-const togglesFile = join(dataDir, 'modular/toggles')
+const sqliteFile = join(dataDir, 'modular.sqlite')
+
+/** Writes straight into the SQL table the module stores toggles in (created by run 1). */
+function setToggles(toggles) {
+  const db = new DatabaseSync(sqliteFile)
+  db.exec('DELETE FROM modular_toggles')
+  for (const [id, active] of Object.entries(toggles)) {
+    db.prepare('INSERT INTO modular_toggles (extension_id, active) VALUES (?, ?)').run(id, active ? 1 : 0)
+  }
+  db.close()
+}
 let failures = 0
 
 // Start from empty storage: no toggles, no migration ledger, no app data.
@@ -120,7 +131,7 @@ console.log('\n● Migrations (/api/demo/migrations)')
   const result = json('api/demo/migrations')
   check(result?.failed === null, 'no migration failed')
   const quiz = result?.status?.find((entry) => entry.extensionId === 'quiz')
-  check(JSON.stringify(quiz?.applied) === JSON.stringify(['001-question-bank', '002-difficulty']), `quiz migrations applied in order (${quiz?.applied})`)
+  check(JSON.stringify(quiz?.applied) === JSON.stringify(['001-question-bank', '002-difficulty', '003-attempts-table']), `quiz migrations applied in order (${quiz?.applied})`)
   check(quiz?.pending?.length === 0, 'nothing pending')
   check(result?.questionBankSize === 2, 'migration seeded data through the host migration context')
   check(json('api/quiz/questions') !== undefined, 'quiz API route generated while the extension is active')
@@ -150,8 +161,7 @@ console.log('\n● Disabled at build time')
 // ---------------------------------------------------------------------------
 // Run 3 — everything built, quiz switched off by a persistent toggle
 // ---------------------------------------------------------------------------
-mkdirSync(join(dataDir, 'modular'), { recursive: true })
-writeFileSync(togglesFile, JSON.stringify({ quiz: false }))
+setToggles({ quiz: false })
 // The quiz pages answer 404 now, which prerendering would otherwise treat as fatal.
 generate('', { allowErrors: true })
 
@@ -172,7 +182,7 @@ console.log('\n● Persistent toggle { quiz: false }')
   check(migrations?.executed?.length === 0, 'no migration re-executed')
   check(clientBundle().includes('Quiz questions'), 'quiz is still part of the build (runtime toggle, not build-time removal)')
 }
-rmSync(togglesFile, { force: true })
+setToggles({})
 
 console.log(failures ? `\n✘ ${failures} SSR check(s) failed` : '\n✔ all SSR checks passed')
 process.exit(failures ? 1 : 0)

@@ -151,6 +151,48 @@ export function seedersTemplate(extensions: readonly ScannedExtension[]): string
   return [...imports, ``, `export const seeders = [`, ...entries, `]`, ``].join('\n')
 }
 
+/** Nitro virtual `#nuxt-modular/database` — opens the configured db0 connector (or the user's handler). */
+export function databaseTemplate(database: { connector?: string; handler?: string; dialect: string; connectorFile?: string; db0File?: string } | undefined): string {
+  if (!database) {
+    return `export const connectorName = undefined\nexport const dialectName = undefined\nexport const createModularDatabase = undefined\n`
+  }
+  if (database.handler) {
+    return [
+      `import handler from ${JSON.stringify(database.handler)}`,
+      `export const connectorName = undefined`,
+      `export const dialectName = ${JSON.stringify(database.dialect)}`,
+      `export const createModularDatabase = () => handler()`,
+      ``,
+    ].join('\n')
+  }
+  return [
+    `import connector from ${JSON.stringify(database.connectorFile)}`,
+    `import { createDatabase } from ${JSON.stringify(database.db0File)}`,
+    `export const connectorName = ${JSON.stringify(database.connector)}`,
+    `export const dialectName = ${JSON.stringify(database.dialect)}`,
+    `export const createModularDatabase = (options) => createDatabase(connector(options))`,
+    ``,
+  ].join('\n')
+}
+
+/** Types the migration and seeder contexts with the configured database. */
+export const databaseContextTypes = (coreAlias: string): string => `import type { SqlDatabase, SqlDialect } from ${JSON.stringify(coreAlias)}
+
+declare module ${JSON.stringify(coreAlias)} {
+  interface ModularMigrationContext {
+    /** The database configured with \`modular.database\`. */
+    db: SqlDatabase
+    dialect: SqlDialect
+  }
+  interface ModularSeederContext {
+    db: SqlDatabase
+    dialect: SqlDialect
+  }
+}
+
+export {}
+`
+
 export const serverDataTypes = `declare module '#nuxt-modular/server-manifests' {
   import type { ExtensionManifest } from '#modular'
   export const manifests: readonly ExtensionManifest[]
@@ -161,6 +203,11 @@ declare module '#nuxt-modular/server-routes' {
 declare module '#nuxt-modular/migrations' {
   import type { MigrationEntry } from '#modular'
   export const migrations: readonly MigrationEntry[]
+}
+declare module '#nuxt-modular/database' {
+  export const connectorName: string | undefined
+  export const dialectName: 'sqlite' | 'mysql' | 'postgresql'
+  export const createModularDatabase: ((options: Record<string, unknown>) => unknown) | undefined
 }
 declare module '#nuxt-modular/seeders' {
   import type { SeederEntry } from '#modular'

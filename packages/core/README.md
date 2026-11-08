@@ -13,6 +13,8 @@ Framework-agnostic building blocks of [nuxt-modular](../nuxt/README.md):
 - `runMigrationsReset` (revert everything) and a seeder runner: `defineSeeder`, `runSeeders`, `planSeeders`
 - compatibility: a dependency-free semver (`satisfies`, `isValidRange`, `compareVersions`) and
   `checkRequirements` / `findDependencyCycles` for `requires` and `dependsOn` diagnostics
+- SQL state stores over a tiny db0-compatible interface: `createSqlStores` (migration ledger, atomic lock, toggles) on SQLite,
+  MySQL and PostgreSQL, and `normalizeDialect`
 - per-extension settings: `mergeConfig`, `getConfigValue`
 
 `@nuxt-modular/core/runtime` exports everything except the Zod schemas and

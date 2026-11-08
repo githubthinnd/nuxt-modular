@@ -1,4 +1,3 @@
-import { useStorage } from 'nitropack/runtime'
 import { migrations } from '#nuxt-modular/migrations'
 import { manifests } from '#nuxt-modular/server-manifests'
 import {
@@ -14,7 +13,8 @@ import {
   sortByDependencies,
 } from '@nuxt-modular/core/runtime'
 import { describeError } from '../utils/describe-error'
-import { useModularConfig } from './config'
+import { useModularDatabase } from './database'
+import { useModularStateStore } from './state-store'
 import { useModularToggles } from './toggles'
 import { useModularServerHooks } from './utils'
 
@@ -40,13 +40,8 @@ export class MigrationLockError extends Error {
   override readonly name = 'MigrationLockError'
 }
 
-const LOCK_KEY = 'migrations:lock'
 const LOCK_TTL_MS = 5 * 60 * 1000
 const order = sortByDependencies(manifests)
-
-function names(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((name): name is string => typeof name === 'string') : []
-}
 
 /**
  * Runs extension migrations (`server/migrations/*`). The ledger and a
@@ -55,40 +50,29 @@ function names(value: unknown): string[] {
  * filter hook.
  */
 export function useModularMigrations(): ModularMigrations {
-  const config = useModularConfig()
-  const storage = () => useStorage(config.storage)
-
+  // Resolved per call: SQL tables when `modular.database` is set, Nitro storage otherwise.
   const ledger: MigrationLedger = {
-    async applied(extensionId) {
-      return names(await storage().getItem(`migrations:${extensionId}`))
-    },
-    async record(extensionId, name) {
-      const applied = names(await storage().getItem(`migrations:${extensionId}`))
-      if (!applied.includes(name)) applied.push(name)
-      await storage().setItem(`migrations:${extensionId}`, applied)
-    },
-    async remove(extensionId, name) {
-      const applied = names(await storage().getItem(`migrations:${extensionId}`)).filter((entry) => entry !== name)
-      await storage().setItem(`migrations:${extensionId}`, applied)
-    },
+    applied: async (extensionId) => (await useModularStateStore()).ledger.applied(extensionId),
+    record: async (extensionId, name) => (await useModularStateStore()).ledger.record(extensionId, name),
+    remove: async (extensionId, name) => (await useModularStateStore()).ledger.remove(extensionId, name),
   }
 
-  // The base context lacks host-provided fields until the filter adds them.
-  const createContext = async (base: MigrationContextBase): Promise<MigrationContext> =>
-    useModularServerHooks().applyFilter('modular:migration-context', base as MigrationContext)
+  // The configured database is handed to every migration; the host filter may still add or replace fields.
+  const createContext = async (base: MigrationContextBase): Promise<MigrationContext> => {
+    const database = await useModularDatabase()
+    const seeded = database ? { ...base, db: database.db, dialect: database.dialect } : base
+    return useModularServerHooks().applyFilter('modular:migration-context', seeded as MigrationContext)
+  }
 
   const log = (message: string) => console.info(`[nuxt-modular] migration ${message}`)
 
   const withLock = async <T>(run: () => Promise<T>): Promise<T> => {
-    const held = await storage().getItem(LOCK_KEY)
-    if (typeof held === 'number' && Date.now() - held < LOCK_TTL_MS) {
-      throw new MigrationLockError('[nuxt-modular] Migrations are already running')
-    }
-    await storage().setItem(LOCK_KEY, Date.now())
+    const release = await (await useModularStateStore()).acquireLock('migrations', LOCK_TTL_MS)
+    if (!release) throw new MigrationLockError('[nuxt-modular] Migrations are already running')
     try {
       return await run()
     } finally {
-      await storage().removeItem(LOCK_KEY)
+      await release()
     }
   }
 

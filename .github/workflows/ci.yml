@@ -26,6 +26,48 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
 
+  databases:
+    name: PostgreSQL and MySQL integration
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: pw, POSTGRES_DB: modular }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+      mysql:
+        image: mysql:8.4
+        env: { MYSQL_ROOT_PASSWORD: pw, MYSQL_DATABASE: modular }
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd "mysqladmin ping -ppw" --health-interval 5s --health-timeout 5s --health-retries 20
+      mariadb:
+        image: mariadb:11
+        env: { MARIADB_ROOT_PASSWORD: pw, MARIADB_DATABASE: modular }
+        ports: ['3307:3306']
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Drivers are optional peers of the module; install them for this job only.
+      - run: pnpm add -w -D pg mysql2 --no-frozen-lockfile
+      - name: Store suite against real servers
+        run: pnpm --filter @nuxt-modular/core exec vitest run test/sql.integration.test.ts
+        env:
+          TEST_POSTGRES_URL: postgresql://postgres:pw@127.0.0.1:5432/modular
+          TEST_MYSQL_URL: mysql://root:pw@127.0.0.1:3306/modular
+      - name: Store suite against MariaDB
+        run: pnpm --filter @nuxt-modular/core exec vitest run test/sql.integration.test.ts
+        env:
+          TEST_MYSQL_URL: mysql://root:pw@127.0.0.1:3307/modular
+
   e2e:
     name: Playwright E2E
     runs-on: ubuntu-latest
