@@ -16,7 +16,7 @@ catalog:
   "@nuxt/module-builder": ^1.0.3
   "@nuxt/schema": ^4.6.4
   "@playwright/test": ^1.65.0
-  "@types/node": ^24.0.0
+  "@types/node": ^26.6.6
   "@vue/test-utils": ^2.5.1
   db0: ^0.3.4
   h3: ^1.15.11
