@@ -10,3 +10,9 @@ coverage
 .env
 .env.*
 !.env.example
+docs
+CLAUDE.md
+# Playwright
+test-results
+playwright-report
+blob-report

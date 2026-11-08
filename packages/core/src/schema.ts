@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isValidRange } from './semver'
 
 /*
  * Manifest contracts for nuxt-modular extensions.
@@ -62,6 +63,14 @@ export const HookNameSchema = z
 export const SemverSchema = z
   .string()
   .regex(SEMVER_PATTERN, 'Must be a valid semantic version, e.g. "1.0.0"')
+
+/** A semver range such as `^1.2.0`, `>=1 <3` or `1.x || 2.x`. */
+export const SemverRangeSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(128)
+  .refine(isValidRange, 'Must be a valid semver range, e.g. "^1.2.0"')
 
 /**
  * Sort weight. Lower values come first; ties are broken deterministically by
@@ -161,6 +170,20 @@ export const ServerHookSubscriptionSchema = z.strictObject({
 })
 
 // ---------------------------------------------------------------------------
+// Compatibility
+// ---------------------------------------------------------------------------
+
+/**
+ * Version constraints checked at build time:
+ * - `modular`: range of the nuxt-modular host the extension supports;
+ * - `extensions`: version range per dependency; every key must also be listed in `dependsOn`.
+ */
+export const ExtensionRequirementsSchema = z.strictObject({
+  modular: SemverRangeSchema.optional(),
+  extensions: z.record(ExtensionIdSchema, SemverRangeSchema).default({}),
+})
+
+// ---------------------------------------------------------------------------
 // Manifest
 // ---------------------------------------------------------------------------
 
@@ -173,6 +196,13 @@ const ExtensionManifestShape = z.strictObject({
   enabled: z.boolean().default(true),
   /** Ids of extensions that must be registered and active for this one to load. */
   dependsOn: z.array(ExtensionIdSchema).default([]),
+  /** Version constraints on the host and on dependencies; see {@link ExtensionRequirementsSchema}. */
+  requires: ExtensionRequirementsSchema.default({ extensions: {} }),
+  /**
+   * Default settings, readable with `useExtensionConfig()`. Public: they ship
+   * to the browser. The host overrides them with `modular.config[<id>]`.
+   */
+  config: z.record(z.string(), z.json()).default({}),
   permissions: z.array(PermissionDeclarationSchema).default([]),
   navigation: z.array(NavigationItemSchema).default([]),
   slots: z.array(OutletSlotDefinitionSchema).default([]),
@@ -236,6 +266,15 @@ export const ExtensionManifestSchema = ExtensionManifestShape.superRefine((manif
       })
     }
   })
+  for (const id of Object.keys(manifest.requires.extensions)) {
+    if (!manifest.dependsOn.includes(id)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['requires', 'extensions', id],
+        message: `"${id}" has a version constraint but is not listed in dependsOn`,
+      })
+    }
+  }
   reportDuplicates(ctx, manifest.dependsOn, 'dependsOn', (id) => `Dependency "${id}"`)
   reportDuplicates(ctx, manifest.permissions.map((p) => p.id), 'permissions', (id) => `Permission "${id}"`)
   reportDuplicates(ctx, manifest.navigation.map((n) => n.id), 'navigation', (id) => `Navigation item "${id}"`)

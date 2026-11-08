@@ -21,6 +21,8 @@ describe('defineExtensionManifest', () => {
       ...minimal,
       enabled: true,
       dependsOn: [],
+      requires: { extensions: {} },
+      config: {},
       permissions: [],
       navigation: [],
       slots: [],

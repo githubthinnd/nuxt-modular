@@ -1,0 +1,1 @@
+export default { id: "ignored", name: "x", version: "1.0.0" }
