@@ -25,5 +25,11 @@ export default defineEventHandler(async (event) => {
   const score = await hooks.applyFilter('quiz:score', scoreAnswers(answers), { courseId, answers })
   await hooks.callHook('quiz:submitted', { courseId, score })
 
+  // Persist the attempt in the configured SQL database (SQLite here; MySQL/PostgreSQL work the same).
+  const database = await useModularDatabase()
+  await database?.db
+    .prepare('INSERT INTO quiz_attempts (id, course_id, score, created_at) VALUES (?, ?, ?, ?)')
+    .run(crypto.randomUUID(), courseId, Number(score), Date.now())
+
   return { score }
 })

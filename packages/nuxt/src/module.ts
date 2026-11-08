@@ -16,6 +16,7 @@ import {
   createResolver,
   defineNuxtModule,
   extendPages,
+  resolvePath,
   useLogger,
 } from '@nuxt/kit'
 import {
@@ -29,6 +30,7 @@ import {
 } from '@nuxt-modular/core'
 import { dirname, join, relative, resolve } from 'pathe'
 import { addDevtoolsTypes, setupDevtools } from './devtools'
+import { type DatabaseInput, resolveDatabaseInput } from './runtime/utils/database-options'
 import { glob } from 'tinyglobby'
 import {
   describeDir,
@@ -41,6 +43,8 @@ import {
 import {
   componentsTemplate,
   componentsTypes,
+  databaseContextTypes,
+  databaseTemplate,
   manifestsTemplate,
   manifestsTypes,
   migrationsTemplate,
@@ -100,6 +104,19 @@ export interface ModuleOptions {
    */
   config: Record<string, JsonObject>
   /**
+   * SQL database for nuxt-modular's own state (migration ledger with an atomic
+   * lock, persistent toggles) and for your migrations and seeders (`db` in
+   * their context). SQLite, MySQL/MariaDB and PostgreSQL via db0.
+   *
+   * - `'postgresql://user:pass@host/db'`, `'mysql://…'`, `'sqlite:./modular.db'`: URL string
+   * - `{ connector: 'postgresql' }` with the URL in `NUXT_MODULAR_DATABASE_URL` (keeps secrets out of the build)
+   * - `{ handler: '~/server/modular-db', dialect: 'postgresql' }` to supply your own db0 instance
+   *
+   * Install the driver you use (`pg`, `mysql2`; SQLite needs none on Node ≥ 22.5).
+   * @default false (state lives in Nitro storage)
+   */
+  database: DatabaseInput
+  /**
    * Registers Nitro tasks (`nuxt task run modular:migrate`, `modular:seed`,
    * `modular:migrate:status|rollback|reset|refresh`, `modular:list`). Turns on
    * Nitro's `experimental.tasks`.
@@ -113,6 +130,7 @@ export interface ModuleHooks {
   'modular:extensions': (extensions: ScannedExtension[]) => void | Promise<void>
 }
 
+export type { ConnectorName, DatabaseInput } from './runtime/utils/database-options'
 export type { ScannedExtension, ScannedMigration, ScannedPage, ScannedSeeder, ScannedServerHook, ScannedServerRoute } from './scan'
 
 /** Import path for extension code (manifests, server hook handlers) → `@nuxt-modular/core`. */
@@ -155,6 +173,7 @@ export default defineNuxtModule<ModuleOptions>().with({
     toggles: { enabled: true, ttl: 1000 },
     migrations: { auto: false },
     config: {},
+    database: false,
     tasks: false,
   },
   async setup(options, nuxt) {
@@ -321,6 +340,29 @@ export default defineNuxtModule<ModuleOptions>().with({
     addServerTemplate({ filename: '#nuxt-modular/server-routes', getContents: () => serverRoutesTemplate(extensions) })
     addServerTemplate({ filename: '#nuxt-modular/migrations', getContents: () => migrationsTemplate(extensions) })
     addServerTemplate({ filename: '#nuxt-modular/seeders', getContents: () => seedersTemplate(extensions) })
+
+    // Database (optional): the connector is imported at build time, so nothing is bundled when unused.
+    let database: ReturnType<typeof resolveDatabaseInput>
+    try {
+      database = resolveDatabaseInput(options.database)
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : String(error))
+    }
+    const databaseModule = database && {
+      connector: database.connector,
+      dialect: database.dialect,
+      ...(database.handler ? { handler: await resolvePath(database.handler) } : {}),
+      ...(database.connector
+        ? {
+            connectorFile: fileURLToPath(import.meta.resolve(`db0/connectors/${database.connector}`)),
+            db0File: fileURLToPath(import.meta.resolve('db0')),
+          }
+        : {}),
+    }
+    addServerTemplate({ filename: '#nuxt-modular/database', getContents: () => databaseTemplate(databaseModule) })
+    if (database) {
+      addTypeTemplate({ filename: 'types/nuxt-modular-database.d.ts', getContents: () => databaseContextTypes(CORE_ALIAS) }, { nitro: true, nuxt: true })
+    }
     addTypeTemplate({ filename: 'types/nuxt-modular-server-data.d.ts', getContents: () => serverDataTypes }, { nitro: true, nuxt: true })
 
     addServerPlugin(resolver.resolve('./runtime/server/plugin'))
@@ -331,12 +373,20 @@ export default defineNuxtModule<ModuleOptions>().with({
       { name: 'useModularMigrations', from: resolver.resolve('./runtime/server/migrations') },
       { name: 'useModularSeeders', from: resolver.resolve('./runtime/server/seeders') },
       { name: 'useModularExtensionConfig', from: resolver.resolve('./runtime/server/extension-config') },
+      { name: 'useModularDatabase', from: resolver.resolve('./runtime/server/database') },
     ])
 
     nuxt.options.runtimeConfig.modular = {
       storage: options.storage,
       toggles: { enabled: options.toggles.enabled, ttl: options.toggles.ttl },
       migrations: { auto: options.migrations.auto },
+      database: {
+        enabled: Boolean(database),
+        // Empty unless written in nuxt.config; production should set NUXT_MODULAR_DATABASE_URL.
+        url: database?.url ?? '',
+        options: database?.options ?? {},
+        prefix: database?.prefix ?? 'modular_',
+      },
     }
     // Public so the browser sees the same settings as the server; env: NUXT_PUBLIC_MODULAR_CONFIG_...
     ;(nuxt.options.runtimeConfig.public as Record<string, unknown>).modular = { config: options.config }

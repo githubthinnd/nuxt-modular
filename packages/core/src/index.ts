@@ -145,3 +145,6 @@ export type {
   SeederRef,
   SeederReport,
 } from './seeders'
+
+export { createSqlStores, normalizeDialect } from './sql'
+export type { ReleaseLock, SqlDatabase, SqlDialect, SqlParam, SqlStatement, SqlStoreOptions, SqlStores } from './sql'

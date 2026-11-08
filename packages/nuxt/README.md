@@ -13,6 +13,7 @@ server hooks — without editing host templates and without hydration mismatches
 - **Build-time validation**: manifests are validated with Zod; broken references fail the build with every issue listed.
 - **Feature toggles**: switch an extension off for everyone at runtime — its UI, pages, API routes and server hooks disappear.
 - **Migrations & seeders**: extensions ship ordered `server/migrations/*` (tracked in a ledger) and idempotent `server/seeders/*`.
+- **Databases**: SQLite, MySQL/MariaDB and PostgreSQL (via db0) for the migration ledger, an atomic lock, toggles and your migrations.
 - **Settings**: manifest defaults overridden per environment, read with `useExtensionConfig()`.
 - **Compatibility**: `requires` pins the host and dependency versions; incompatible sets fail the build.
 - **Tooling**: Nitro tasks (`modular:migrate`, `modular:seed`, …) and the `nuxt-modular` CLI (`make:*`, `list`, `validate`).
@@ -36,6 +37,7 @@ export default defineNuxtConfig({
     storage: 'nuxt-modular',              // Nitro storage mount for toggles and the migration ledger
     toggles: { enabled: true, ttl: 1000 },// persistent feature toggles, cached per process (ms)
     migrations: { auto: false },          // run pending migrations when the server starts
+    database: false,                      // 'postgresql://…' | 'mysql://…' | 'sqlite:./modular.db' (see Database)
     config: {},                           // per-extension settings: { quiz: { bonusPoints: 10 } }
     tasks: false,                         // register `modular:*` Nitro tasks (experimental.tasks)
   },
@@ -165,6 +167,64 @@ declare module '#modular' {
   interface ModularFilters { 'quiz:score': [score: number, context: { courseId: string }] }
 }
 ```
+
+## Database
+
+By default nuxt-modular keeps its state (migration ledger, toggles) in Nitro
+storage. Point it at a SQL database instead and you get an **atomic migration
+lock** that is safe with many instances, toggles that every instance sees
+immediately, and a ready-made `db` in every migration and seeder.
+
+| Database | `modular.database` | Driver to install |
+|----------|--------------------|-------------------|
+| SQLite | `'sqlite:./.data/modular.db'` | none (Node ≥ 22.5 built-in); or `better-sqlite3`, `@libsql/client` |
+| PostgreSQL | `'postgresql://user:pass@host/db'` | `pg` |
+| MySQL / MariaDB | `'mysql://user:pass@host/db'` | `mysql2` |
+
+```ts
+// nuxt.config.ts: keep secrets out of the build, pass only the connector
+modular: { database: { connector: 'postgresql' } }
+```
+```bash
+NUXT_MODULAR_DATABASE_URL=postgresql://user:pass@host/db   # read at runtime
+```
+
+The connector is inferred from a URL (`postgresql:`, `postgres:`, `mysql:`, `mariadb:`, `sqlite:`, `file:`, `libsql:`).
+Options: `connector`, `options` (driver settings, they win over the URL), `dialect`, `prefix` (table prefix,
+default `modular_`: tables `modular_migrations`, `modular_locks`, `modular_toggles`). Nothing is bundled when
+`database` is unset.
+
+**In migrations and seeders** the database arrives in the context, typed:
+
+```ts
+export default defineMigration({
+  async up({ db, dialect }) {
+    await db.exec('CREATE TABLE IF NOT EXISTS quiz_attempts (id VARCHAR(64) NOT NULL PRIMARY KEY, score INT NOT NULL)')
+    if (dialect === 'postgresql') await db.exec('CREATE INDEX IF NOT EXISTS quiz_attempts_score ON quiz_attempts (score)')
+  },
+  async down({ db }) { await db.exec('DROP TABLE IF EXISTS quiz_attempts') },
+})
+```
+
+`db` is a [db0](https://db0.unjs.io) database: `db.exec(sql)`, `db.prepare(sql).all/get/run(...params)` with `?`
+placeholders on every dialect. **Write portable SQL** (`VARCHAR`, `INT`, `BIGINT`, plain `CREATE TABLE IF NOT EXISTS`)
+and branch on `dialect` for the rest. There is no schema builder on purpose: use your own (Drizzle, Kysely) inside
+a migration if you want one.
+
+**In routes and hooks** use `useModularDatabase()` (`{ db, dialect, prefix }`, or `undefined` when unset).
+The module also still calls the `modular:migration-context` / `modular:seeder-context` filters, after adding `db`.
+
+**Bring your own connection** (pools, read replicas, Drizzle…):
+
+```ts
+modular: { database: { handler: '~/server/modular-db', dialect: 'postgresql' } }
+// server/modular-db.ts: default export returns a db0-compatible database
+export default () => createDatabase(postgresql({ url: process.env.DATABASE_URL, max: 10 }))
+```
+
+Notes: toggles are written with delete-then-insert (no upsert) to stay portable; the lock is a unique-key insert
+with an expiry, so a crashed process frees it after five minutes. Tested against SQLite on every run; PostgreSQL,
+MySQL and MariaDB suites run in CI against real servers.
 
 ## Settings
 
@@ -333,8 +393,8 @@ hydration warning, because the server and client genuinely rendered different co
   build warns, and Nitro answers with only one of them.
 - Session overrides (`setModuleActive`) only affect the UI and pages; use persistent
   toggles to switch off server routes and hooks.
-- The migration lock is best-effort (storage has no atomic compare-and-set); avoid
-  starting many instances with `migrations.auto` at the same moment against an empty ledger.
+- With Nitro storage the migration lock is best-effort (no atomic compare-and-set); configure `modular.database`
+  when several instances run migrations (`migrations.auto`) at the same time.
 
 ## Testing extensions
 

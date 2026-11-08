@@ -22,6 +22,11 @@ All notable changes are documented here. The format follows
 - `@nuxt-modular/core/node`: the extension scanner, shared by the module and the CLI.
 - Repository hygiene: `CONTRIBUTING`, `SECURITY`, `CODE_OF_CONDUCT`, issue/PR templates, release workflow, Dependabot.
 
+- **Databases**: `modular.database` (SQLite, PostgreSQL, MySQL/MariaDB through db0). Migration ledger, an atomic lock and
+  toggles move to SQL tables; migrations and seeders receive a typed `db` and `dialect`; `useModularDatabase()`;
+  `NUXT_MODULAR_DATABASE_URL`; custom `handler`; table `prefix`. Nitro storage stays the default.
+- CI job running the store suite against real PostgreSQL, MySQL and MariaDB servers.
+
 ### Changed
 
 - Playground UI: top bar with breadcrumbs, light/dark theme switch (cookie, SSR-safe) and an extension X-ray overlay (`X`).

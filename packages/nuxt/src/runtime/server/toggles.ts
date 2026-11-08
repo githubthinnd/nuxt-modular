@@ -1,4 +1,3 @@
-import { useStorage } from 'nitropack/runtime'
 import { manifests } from '#nuxt-modular/server-manifests'
 import {
   createRegistryState,
@@ -7,6 +6,7 @@ import {
   type RegistryState,
 } from '@nuxt-modular/core/runtime'
 import { useModularConfig } from './config'
+import { useModularStateStore } from './state-store'
 import { useModularServerHooks } from './utils'
 
 export interface ExtensionToggleState {
@@ -37,7 +37,6 @@ export interface ModularToggles {
   set(id: string, active: boolean | null): Promise<void>
 }
 
-const STORAGE_KEY = 'toggles'
 const buildState: Readonly<RegistryState> = createRegistryState(manifests)
 
 let cache: { at: number; value: Promise<Record<string, boolean>> } | undefined
@@ -58,14 +57,12 @@ function sanitize(value: unknown): Record<string, boolean> {
  */
 export function useModularToggles(): ModularToggles {
   const config = useModularConfig()
-  const storage = () => useStorage(config.storage)
-
   const getOverrides = (): Promise<Record<string, boolean>> => {
     if (!config.toggles.enabled) return Promise.resolve({})
     const now = Date.now()
     if (!cache || now - cache.at > config.toggles.ttl) {
-      const value = storage()
-        .getItem(STORAGE_KEY)
+      const value = useModularStateStore()
+        .then((store) => store.toggles.read())
         .then(sanitize)
         .catch((error: unknown) => {
           cache = undefined
@@ -112,10 +109,7 @@ export function useModularToggles(): ModularToggles {
     async set(id, active) {
       if (!config.toggles.enabled) throw new Error('[nuxt-modular] Persistent toggles are disabled (`modular.toggles: false`)')
       if (!(id in buildState.extensions)) throw new Error(`[nuxt-modular] Unknown extension "${id}"`)
-      const current = sanitize(await storage().getItem(STORAGE_KEY))
-      if (active === null) delete current[id]
-      else current[id] = active
-      await storage().setItem(STORAGE_KEY, current)
+      await (await useModularStateStore()).toggles.write(id, active)
       cache = undefined
       await useModularServerHooks().callHook('modular:extension-toggled', id, active)
     },

@@ -5,6 +5,13 @@ export interface ModularServerConfig {
   readonly storage: string
   readonly toggles: { readonly enabled: boolean; readonly ttl: number }
   readonly migrations: { readonly auto: boolean }
+  readonly database: {
+    readonly enabled: boolean
+    /** Connection URL (`NUXT_MODULAR_DATABASE_URL`), empty when the connector takes explicit options. */
+    readonly url: string
+    readonly options: Record<string, unknown>
+    readonly prefix: string
+  }
 }
 
 const record = (value: unknown): Record<string, unknown> =>
@@ -17,10 +24,17 @@ export function useModularConfig(): ModularServerConfig {
   const raw = record(record(useRuntimeConfig()).modular)
   const toggles = record(raw.toggles)
   const migrations = record(raw.migrations)
+  const database = record(raw.database)
   const ttl = Number(toggles.ttl)
   return {
     storage: typeof raw.storage === 'string' && raw.storage ? raw.storage : 'nuxt-modular',
     toggles: { enabled: bool(toggles.enabled, true), ttl: Number.isFinite(ttl) && ttl >= 0 ? ttl : 1000 },
     migrations: { auto: bool(migrations.auto, false) },
+    database: {
+      enabled: bool(database.enabled, false),
+      url: typeof database.url === 'string' ? database.url : '',
+      options: record(database.options),
+      prefix: typeof database.prefix === 'string' && database.prefix ? database.prefix : 'modular_',
+    },
   }
 }

@@ -9,6 +9,7 @@ import {
   sortByDependencies,
 } from '@nuxt-modular/core/runtime'
 import { describeError } from '../utils/describe-error'
+import { useModularDatabase } from './database'
 import { useModularToggles } from './toggles'
 import { useModularServerHooks } from './utils'
 
@@ -48,7 +49,11 @@ export function useModularSeeders(): ModularSeeders {
     async run(options = {}) {
       const report = await runSeeders({
         ...(await selection(options)),
-        createContext: (base: SeederContextBase) => useModularServerHooks().applyFilter('modular:seeder-context', base as SeederContext),
+        createContext: async (base: SeederContextBase) => {
+          const database = await useModularDatabase()
+          const seeded = database ? { ...base, db: database.db, dialect: database.dialect } : base
+          return useModularServerHooks().applyFilter('modular:seeder-context', seeded as SeederContext)
+        },
         log: (message) => console.info(`[nuxt-modular] seeder ${message}`),
       })
       if (report.failed) {

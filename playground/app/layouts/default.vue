@@ -16,11 +16,16 @@ const themeIcon = computed(() => (theme.value === 'dark' ? 'sun' : theme.value =
 
 // Breadcrumbs from the route.
 const route = useRoute()
+const router = useRouter()
 const crumbs = computed(() => {
   const parts = route.path.split('/').filter(Boolean)
   const label = (part: string) => part.split('-').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
   if (!parts.length) return [{ label: 'Dashboard', to: '' }]
-  return parts.map((part, index) => ({ label: label(part), to: index === parts.length - 1 ? '' : `/${parts.slice(0, index + 1).join('/')}` }))
+  // Only ancestors that are real pages become links (e.g. "/course" has none).
+  return parts.map((part, index) => {
+    const path = `/${parts.slice(0, index + 1).join('/')}`
+    return { label: label(part), to: index < parts.length - 1 && router.resolve(path).matched.length ? path : '' }
+  })
 })
 
 // Outlet X-ray: frames and labels everything an extension contributes to the page.
