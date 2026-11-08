@@ -1,9 +1,33 @@
 {
   "name": "@nuxt-modular/core",
   "version": "0.1.0",
-  "description": "Framework-agnostic manifest contracts and validation for nuxt-modular extensions.",
+  "description": "Framework-agnostic core of nuxt-modular: extension manifest schemas, registry, hook bus, migrations, seeders, SQL stores and semver checks.",
+  "keywords": [
+    "nuxt-modular",
+    "extensions",
+    "plugin-system",
+    "manifest",
+    "registry",
+    "hooks",
+    "migrations",
+    "seeders",
+    "sqlite",
+    "postgresql",
+    "mysql",
+    "semver",
+    "typescript"
+  ],
   "license": "MIT",
   "author": "Nhữ Duy Thìn",
+  "homepage": "https://github.com/githubthinnd/nuxt-modular#readme",
+  "bugs": {
+    "url": "https://github.com/githubthinnd/nuxt-modular/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/githubthinnd/nuxt-modular.git",
+    "directory": "packages/core"
+  },
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -24,13 +48,6 @@
   "types": "./dist/index.d.mts",
   "files": [
     "dist"
-  ],
-  "keywords": [
-    "nuxt",
-    "modular",
-    "extensions",
-    "plugins",
-    "manifest"
   ],
   "scripts": {
     "build": "unbuild",

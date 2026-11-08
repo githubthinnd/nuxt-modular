@@ -1,71 +1,51 @@
-# nuxt-modular
+<h1 align="center">nuxt-modular</h1>
 
-<p align="center"><img src="https://raw.githubusercontent.com/githubthinnd/nuxt-modular/master/assets/demo.gif" alt="nuxt-modular playground demo" width="760"></p>
+<p align="center"><strong>A plugin and extension system for Nuxt.</strong><br>
+Build a modular, extensible Nuxt app: drop in extensions that add UI, pages, API routes, permissions, hooks and database migrations,
+without editing your templates and without hydration mismatches.</p>
 
-Turn a Nuxt app into an extensible **host platform**. Independent extensions
-plug in components, pages, navigation, permissions, plugins, server routes and
-server hooks — without editing host templates and without hydration mismatches.
+<p align="center">
+  <a href="https://www.npmjs.com/package/nuxt-modular"><img alt="npm version" src="https://img.shields.io/npm/v/nuxt-modular?color=4f46e5&label=npm"></a>
+  <a href="https://www.npmjs.com/package/nuxt-modular"><img alt="npm downloads" src="https://img.shields.io/npm/dm/nuxt-modular?color=4f46e5"></a>
+  <a href="https://github.com/githubthinnd/nuxt-modular/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/githubthinnd/nuxt-modular/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/githubthinnd/nuxt-modular/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/npm/l/nuxt-modular?color=4f46e5"></a>
+  <img alt="Nuxt 3.13+ and 4" src="https://img.shields.io/badge/Nuxt-3.13%2B%20%7C%204-00dc82">
+</p>
 
-- **Outlets**: the host places `<PluginOutlet name="course.tabs" />`; extensions declare what renders there.
-- **SSR-safe**: deterministic ordering, permission checks and state that match on server and client.
-- **Isolated failures**: a crashing extension component shows a fallback; the page keeps rendering, also during SSR.
-- **Full-stack**: extension `server/` dirs become Nitro routes; an action/filter hook bus connects extensions on the server.
-- **Build-time validation**: manifests are validated with Zod; broken references fail the build with every issue listed.
-- **Feature toggles**: switch an extension off for everyone at runtime — its UI, pages, API routes and server hooks disappear.
-- **Migrations & seeders**: extensions ship ordered `server/migrations/*` (tracked in a ledger) and idempotent `server/seeders/*`.
-- **Databases**: SQLite, MySQL/MariaDB and PostgreSQL (via db0) for the migration ledger, an atomic lock, toggles and your migrations.
-- **Settings**: manifest defaults overridden per environment, read with `useExtensionConfig()`.
-- **Compatibility**: `requires` pins the host and dependency versions; incompatible sets fail the build.
-- **Tooling**: Nitro tasks (`modular:migrate`, `modular:seed`, …) and the `nuxt-modular` CLI (`make:*`, `list`, `validate`).
+<p align="center"><img src="https://raw.githubusercontent.com/githubthinnd/nuxt-modular/master/assets/demo.gif" alt="nuxt-modular demo: outlets, role-based navigation, a quiz extension and a live feature toggle" width="820"></p>
 
-Requires Nuxt ≥ 3.13 (tested with Nuxt 4.6).
+## What is nuxt-modular?
 
-## Install
+`nuxt-modular` is a [Nuxt module](https://nuxt.com/modules) that turns a Nuxt application into an **extensible host platform**,
+in the spirit of [Laravel Modules](https://github.com/nWidart/laravel-modules) and WordPress plugins, but typed, SSR-safe and built for
+the Vue ecosystem. Teams ship features as self-contained **extensions** (a folder with a `manifest.ts`); the host decides where
+they appear with **outlets** and who may see them with **permissions**.
+
+- 🧩 **Outlets and slots**: place `<PluginOutlet name="course.tabs" />` in the host; extensions contribute components to it.
+- 🧭 **Navigation, pages, plugins**: extensions add menu entries, routes and Nuxt plugins.
+- 🔐 **Permissions**: capability-based gating (`anyOf` / `allOf`) that is identical on server and client.
+- 🛡️ **Failure isolation**: a crashing extension shows a fallback; the page still renders, also during SSR.
+- 🧪 **Hydration-safe**: deterministic ordering and serializable state, so no hydration mismatch.
+- 🔌 **Full-stack**: extension `server/` folders become Nitro routes; an **action/filter hook bus** connects extensions.
+- 🎚️ **Feature toggles and flags**: switch an extension off for everyone at runtime, or remove it from the build.
+- 🗄️ **Databases**: **SQLite, PostgreSQL and MySQL/MariaDB** with ordered **migrations** and **seeders**, an atomic lock and a typed `db`.
+- ⚙️ **Settings and compatibility**: per-extension config, semver `requires`, dependency graph with cycle detection.
+- 🛠️ **Tooling**: scaffolding CLI (`make:extension`, `validate`), Nitro tasks, a Nuxt DevTools tab, strict TypeScript types.
+
+## Quick start
 
 ```bash
-pnpm add nuxt-modular
+npx nuxi module add nuxt-modular        # or: pnpm add nuxt-modular
 ```
 
 ```ts
 // nuxt.config.ts
 export default defineNuxtConfig({
   modules: ['nuxt-modular'],
-  modular: {
-    extensionsDir: 'extensions',          // relative to the app root and to every layer
-    disabled: [],                         // extension ids to leave out of the build entirely
-    devtools: true,                       // "Extensions" tab in Nuxt DevTools (dev only)
-    storage: 'nuxt-modular',              // Nitro storage mount for toggles and the migration ledger
-    toggles: { enabled: true, ttl: 1000 },// persistent feature toggles, cached per process (ms)
-    migrations: { auto: false },          // run pending migrations when the server starts
-    database: false,                      // 'postgresql://…' | 'mysql://…' | 'sqlite:./modular.db' (see Database)
-    config: {},                           // per-extension settings: { quiz: { bonusPoints: 10 } }
-    tasks: false,                         // register `modular:*` Nitro tasks (experimental.tasks)
-  },
-  nitro: {
-    // Nitro's default storage is in-memory: give the mount a persistent driver.
-    storage: { 'nuxt-modular': { driver: 'fs', base: './.data/modular' } },
-  },
 })
 ```
 
-`storage`, `toggles` and `migrations` are also exposed as `runtimeConfig.modular`,
-so they can be overridden per environment (e.g. `NUXT_MODULAR_MIGRATIONS_AUTO=true`).
-
-## Write an extension
-
-```
-extensions/quiz/
-  manifest.ts        required
-  components/        auto-registered; slot components resolve here
-  pages/             added to the router (host pages win on conflicts)
-  plugins/           Nuxt plugins, registered only while the extension is built
-  server/            Nitro scan dir: api/, routes/, middleware/, plugins/, utils/
-  server/hooks/      handlers referenced by manifest.serverHooks
-  server/migrations/ ordered migrations (`001-name.ts`), see below
-  server/seeders/    idempotent seed data (`001-name.ts`), see below
-```
-
-Generate any of these with the [CLI](../cli/README.md): `nuxt-modular make:extension quiz`.
+Create an extension (or run `npx @nuxt-modular/cli make:extension quiz`):
 
 ```ts
 // extensions/quiz/manifest.ts
@@ -75,334 +55,109 @@ export default defineExtensionManifest({
   id: 'quiz',
   name: 'Quiz',
   version: '1.0.0',
-  dependsOn: [],
-  requires: { modular: '>=0.1.0' },      // optional: host and dependency version ranges
-  config: { bonusPoints: 5 },            // optional: default settings (public, JSON only)
   permissions: [{ id: 'quiz.view', defaultRoles: ['student'] }],
-  navigation: [
-    { id: 'quiz', label: 'Quizzes', path: '/quiz', parent: 'sidebar', order: 20, permission: 'quiz.view' },
-  ],
-  slots: [
-    // A path inside the extension, or a component name from its components/ dir.
-    { id: 'tab', target: 'course.tabs', component: './components/QuizTab.vue', order: 20, permission: 'quiz.view' },
-    { target: 'course.sidebar', component: 'QuizProgressWidget', props: { title: 'Progress' } },
-  ],
+  navigation: [{ id: 'quiz', label: 'Quizzes', path: '/quiz', parent: 'sidebar', permission: 'quiz.view' }],
+  slots: [{ target: 'course.tabs', component: './components/QuizTab.vue', permission: 'quiz.view' }],
   serverHooks: [{ hook: 'quiz:score', handler: './server/hooks/bonus-score.ts', type: 'filter' }],
 })
 ```
 
-Manifests must be **JSON-only**: components and handlers are string references
-resolved at build time, and `props` must be JSON values. This keeps the
-registry serializable through the SSR payload.
-
-Permissions accept `"cap"`, `{ anyOf: [...] }` or `{ allOf: [...] }`.
-Ordering is `order` ascending, then extension id, then declaration index — the
-same on every server and browser.
-
-## Host API
-
-### `<PluginOutlet>`
+Give the host a place for it, and tell the module who the viewer is:
 
 ```vue
+<!-- any page or layout -->
 <PluginOutlet name="course.tabs" :context="{ courseId }" />
-<PluginOutlet name="course.sidebar" wrap-with="aside" item-tag="section">
-  <template #empty>Nothing here yet.</template>
-  <template #fallback="{ extensionId, error }">{{ extensionId }} failed.</template>
-</PluginOutlet>
+```
+```ts
+// app/plugins/permissions.ts
+export default defineNuxtPlugin(() => useModularPermissions().setRoles(['student']))
 ```
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `name` | `string` | Outlet id. |
-| `context` | `object` | Passed to every extension component as the `context` prop (static `props` from the manifest are spread too). |
-| `wrapWith` | `string \| Component` | Wraps the whole outlet; not rendered when the outlet is empty. |
-| `itemTag` | `string` | Tag of each item's `display: contents` wrapper (default `div`; use `li` inside lists). |
+That is it: the tab renders for students, hidden for everyone else; `pages/`, `server/api/`, `plugins/` and `components/`
+inside the extension are wired in automatically. Full walkthrough: **[Getting started](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/01-getting-started.md)**.
 
-### Composables (auto-imported)
+## Databases and migrations
 
 ```ts
-const registry = useModuleRegistry()
-registry.extensions.value          // [{ id, manifest, active, source, missingDependencies }]
-registry.getSlotComponents('course.tabs')
-registry.getNavigation('sidebar')  // tree, filtered by permission and activation
-registry.isModuleActive('quiz')
-registry.setModuleActive('quiz', false) // per request/session; null restores the default
-registry.register(manifest)        // runtime registration (its components must be in the build)
-
-const permissions = useModularPermissions()
-// Usually in a plugin reading the session. Extension capabilities come from the
-// manifests' `permissions[].defaultRoles`; the second argument adds host capabilities.
-permissions.setRoles(['teacher'], ['course.view'])
-permissions.set(['course.view', 'quiz.view']) // or set capabilities directly; '*' grants all
-permissions.can({ anyOf: ['quiz.manage', 'admin'] })
-registry.capabilitiesForRoles(['teacher'])    // ['quiz.manage', 'quiz.view']
-```
-
-Both keep their state in `useState`, so the server and the client agree.
-
-### Server hook bus
-
-```ts
-// any server route
-const hooks = useModularServerHooks()
-const score = await hooks.applyFilter('quiz:score', raw, { courseId })
-await hooks.callHook('quiz:submitted', { courseId, score })
+modular: { database: 'postgresql://user:pass@host/db' }   // or 'mysql://…' or 'sqlite:./modular.db'
 ```
 
 ```ts
-// extensions/quiz/server/hooks/bonus-score.ts
-import { defineFilterHandler } from '#modular'
-export default defineFilterHandler<'quiz:score'>((score) => Math.min(100, score + 5))
-```
+// extensions/quiz/server/migrations/001-create-attempts.ts
+import { defineMigration } from '#modular'
 
-Handlers run in `order`, one after another. A failing handler is logged and
-skipped; a failing filter leaves the value unchanged. Nitro lifecycle hooks are
-forwarded as actions: `nitro:request`, `nitro:after-response`, `nitro:error`.
-
-Type your hooks with declaration merging:
-
-```ts
-declare module '#modular' {
-  interface ModularActions { 'quiz:submitted': [payload: { courseId: string; score: number }] }
-  interface ModularFilters { 'quiz:score': [score: number, context: { courseId: string }] }
-}
-```
-
-## Database
-
-By default nuxt-modular keeps its state (migration ledger, toggles) in Nitro
-storage. Point it at a SQL database instead and you get an **atomic migration
-lock** that is safe with many instances, toggles that every instance sees
-immediately, and a ready-made `db` in every migration and seeder.
-
-| Database | `modular.database` | Driver to install |
-|----------|--------------------|-------------------|
-| SQLite | `'sqlite:./.data/modular.db'` | none (Node ≥ 22.5 built-in); or `better-sqlite3`, `@libsql/client` |
-| PostgreSQL | `'postgresql://user:pass@host/db'` | `pg` |
-| MySQL / MariaDB | `'mysql://user:pass@host/db'` | `mysql2` |
-
-```ts
-// nuxt.config.ts: keep secrets out of the build, pass only the connector
-modular: { database: { connector: 'postgresql' } }
-```
-```bash
-NUXT_MODULAR_DATABASE_URL=postgresql://user:pass@host/db   # read at runtime
-```
-
-The connector is inferred from a URL (`postgresql:`, `postgres:`, `mysql:`, `mariadb:`, `sqlite:`, `file:`, `libsql:`).
-Options: `connector`, `options` (driver settings, they win over the URL), `dialect`, `prefix` (table prefix,
-default `modular_`: tables `modular_migrations`, `modular_locks`, `modular_toggles`). Nothing is bundled when
-`database` is unset.
-
-**In migrations and seeders** the database arrives in the context, typed:
-
-```ts
 export default defineMigration({
-  async up({ db, dialect }) {
-    await db.exec('CREATE TABLE IF NOT EXISTS quiz_attempts (id VARCHAR(64) NOT NULL PRIMARY KEY, score INT NOT NULL)')
-    if (dialect === 'postgresql') await db.exec('CREATE INDEX IF NOT EXISTS quiz_attempts_score ON quiz_attempts (score)')
-  },
+  async up({ db }) { await db.exec('CREATE TABLE IF NOT EXISTS quiz_attempts (id VARCHAR(64) NOT NULL PRIMARY KEY, score INT NOT NULL)') },
   async down({ db }) { await db.exec('DROP TABLE IF EXISTS quiz_attempts') },
 })
 ```
 
-`db` is a [db0](https://db0.unjs.io) database: `db.exec(sql)`, `db.prepare(sql).all/get/run(...params)` with `?`
-placeholders on every dialect. **Write portable SQL** (`VARCHAR`, `INT`, `BIGINT`, plain `CREATE TABLE IF NOT EXISTS`)
-and branch on `dialect` for the rest. There is no schema builder on purpose: use your own (Drizzle, Kysely) inside
-a migration if you want one.
+Migrations run in dependency order, are tracked in a ledger, and are guarded by an atomic lock so several instances can start safely.
+Put the URL in `NUXT_MODULAR_DATABASE_URL` for production. See **[Databases, migrations, seeders](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/07-data.md)**.
 
-**In routes and hooks** use `useModularDatabase()` (`{ db, dialect, prefix }`, or `undefined` when unset).
-The module also still calls the `modular:migration-context` / `modular:seeder-context` filters, after adding `db`.
+## Documentation
 
-**Bring your own connection** (pools, read replicas, Drizzle…):
+| | |
+|---|---|
+| [Getting started](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/01-getting-started.md) | Install and build your first extension |
+| [Core concepts](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/02-concepts.md) | Host, extension, manifest, outlet, registry |
+| [Writing extensions](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/03-extensions.md) | Layout and the full manifest reference |
+| [User interface](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/04-ui.md) | Outlets, navigation, pages, error isolation |
+| [Permissions](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/05-permissions.md) | Capabilities and roles |
+| [Server features](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/06-server.md) | API routes, hook bus, events |
+| [Data](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/07-data.md) | SQLite, PostgreSQL, MySQL, migrations, seeders, tasks |
+| [Configuration](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/08-configuration.md) | Options, settings, environment variables |
+| [Toggles and compatibility](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/09-toggles-and-compatibility.md) | Feature flags, dependencies, semver |
+| [CLI](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/10-cli.md) | `make:*`, `list`, `validate` |
+| [Testing and deployment](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/11-testing-and-deployment.md) | Tests, CI, production checklist |
+| [Troubleshooting and FAQ](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/12-troubleshooting.md) | Symptoms and fixes |
+| [API reference](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/13-api-reference.md) | Composables, utilities, exports |
 
-```ts
-modular: { database: { handler: '~/server/modular-db', dialect: 'postgresql' } }
-// server/modular-db.ts: default export returns a db0-compatible database
-export default () => createDatabase(postgresql({ url: process.env.DATABASE_URL, max: 10 }))
-```
+## How it compares
 
-Notes: toggles are written with delete-then-insert (no upsert) to stay portable; the lock is a unique-key insert
-with an expiry, so a crashed process frees it after five minutes. Tested against SQLite on every run; PostgreSQL,
-MySQL and MariaDB suites run in CI against real servers.
+| | nuxt-modular | Nuxt layers | Nuxt modules | Micro-frontends |
+|---|---|---|---|---|
+| Add features without editing host templates | ✅ outlets | ⚠️ override files | ⚠️ build-time only | ✅ |
+| Runtime activation (feature flags) | ✅ | ❌ | ❌ | ✅ |
+| Permission-gated UI, SSR-consistent | ✅ | ❌ | ❌ | ⚠️ |
+| Crash isolation per extension | ✅ | ❌ | ❌ | ✅ |
+| Migrations, seeders, server hook bus | ✅ | ❌ | ❌ | ❌ |
+| One build, one Vue app, full SSR | ✅ | ✅ | ✅ | ❌ |
 
-## Settings
+nuxt-modular complements layers: extensions can ship inside a layer or an npm package. It is not a micro-frontend system:
+extensions are compiled into the host build, which is what makes SSR and hydration reliable.
 
-`manifest.config` holds an extension's defaults. The host overrides them per
-environment without touching the extension:
+## Requirements
 
-```ts
-// nuxt.config.ts
-modular: { config: { quiz: { bonusPoints: 10 } } }
-// or: NUXT_PUBLIC_MODULAR_CONFIG_QUIZ_BONUSPOINTS=10
-```
+Nuxt ≥ 3.13 (tested with Nuxt 4.6) · Node.js ≥ 22.12. SQLite works without a driver on Node ≥ 22.5; install `pg` or `mysql2`
+for PostgreSQL or MySQL/MariaDB.
 
-```ts
-const quiz = useExtensionConfig('quiz')                  // components, pages, plugins
-quiz.get('limits.maxQuestions', 20)
+## Packages
 
-const { get } = useModularExtensionConfig('quiz')        // server routes and hook handlers
-```
+| Package | Purpose |
+|---------|---------|
+| [`nuxt-modular`](https://www.npmjs.com/package/nuxt-modular) | The Nuxt module |
+| [`@nuxt-modular/cli`](https://www.npmjs.com/package/@nuxt-modular/cli) | Scaffolding and validation |
+| [`@nuxt-modular/core`](https://www.npmjs.com/package/@nuxt-modular/core) | Framework-agnostic core (schemas, registry, hook bus, migrations) |
 
-Objects merge deeply; arrays and scalars replace. Settings are **public** (they
-ship to the browser): never put secrets in them, use `runtimeConfig` for those.
+## FAQ
 
-## Compatibility
+**Does nuxt-modular work with Nuxt 3 and Nuxt 4?** Yes: Nuxt 3.13 and newer.
 
-```ts
-requires: {
-  modular: '^0.1.0',                 // nuxt-modular versions this extension supports
-  extensions: { core: '^2.0.0' },    // version ranges of dependencies (must be in dependsOn)
-}
-```
+**Is it safe to run third-party extensions?** Extensions are trusted code with full host privileges. The module isolates
+*failures*, not malicious code. See the [security policy](https://github.com/githubthinnd/nuxt-modular/blob/master/SECURITY.md).
 
-Ranges use semver syntax (`^`, `~`, `>=1 <3`, `1.x`, `||`). At build time the
-module fails with every problem listed when a range is not met or when `dependsOn`
-forms a cycle; a dependency that is merely absent only warns (the extension stays
-inactive). Extensions are processed dependencies-first, so a dependency's plugins
-register before its dependents'.
+**Can extensions come from npm packages?** Yes, through Nuxt layers.
 
-## Enabling and disabling
+**Which databases are supported?** SQLite, PostgreSQL and MySQL/MariaDB (via [db0](https://db0.unjs.io)); Nitro storage if you configure none.
 
-| How | Scope | Effect |
-|-----|-------|--------|
-| `modular.disabled: ['id']` | build | Removed from the build: no components, pages, plugins, routes or hooks. |
-| `enabled: false` in the manifest | default | Built, but inactive unless a toggle switches it on. |
-| `useModularToggles().set(id, false)` (server) | everyone, persistent | Slots, navigation and pages disappear (pages answer 404), its API routes answer 404 and its server hooks are skipped. `null` restores the default. |
-| `setModuleActive(id, false)` | this request / tab | Hides slots and navigation and makes its pages 404. Server routes and hooks are unaffected. |
+More answers: [Troubleshooting and FAQ](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/12-troubleshooting.md).
 
-Precedence: session override → persistent toggle → `manifest.enabled`; then every
-`dependsOn` must be active too, so switching an extension off also deactivates its dependents.
+## Contributing
 
-The module does not expose an admin endpoint: write your own, behind your own authorization.
-
-```ts
-// server/api/admin/extensions/[id].put.ts
-export default defineEventHandler(async (event) => {
-  await requireAdmin(event) // your check
-  const { active } = await readBody<{ active: boolean | null }>(event)
-  await useModularToggles().set(getRouterParam(event, 'id')!, active)
-  return useModularToggles().list()
-})
-```
-
-Toggles are cached per server process for `toggles.ttl` ms, so other instances
-sharing the storage pick a change up within that delay.
-
-## Migrations
-
-```ts
-// extensions/quiz/server/migrations/001-question-bank.ts
-import { defineMigration } from '#modular'
-
-export default defineMigration({
-  async up({ db, log }) { await db.exec('create table quiz_scores (...)'); log('created') },
-  async down({ db }) { await db.exec('drop table quiz_scores') },
-})
-```
-
-- Order: extensions sorted so dependencies run first, then file names.
-- The first failure stops the run; nothing is recorded for the failed migration.
-- The ledger and a best-effort lock live in the `storage` mount.
-- `migrations.auto` runs pending migrations at server start (never while prerendering);
-  requests wait for them. Extensions switched off by a toggle are skipped.
-- On demand: `useModularMigrations().up()`, `.down(extensionId, steps)`, `.status()`,
-  and the destructive `.reset()` (revert all, dependents first) and `.refresh()` (reset + up).
-
-Give migrations your database through the `modular:migration-context` filter:
-
-```ts
-// server/plugins/migration-context.ts
-export default defineNitroPlugin(() => {
-  useModularServerHooks().addFilter('modular:migration-context', (context) => ({ ...context, db: useDatabase() }))
-})
-
-// server/types/modular.d.ts
-declare module '#modular' {
-  interface ModularMigrationContext { db: ReturnType<typeof useDatabase> }
-}
-export {}
-```
-
-## Seeders
-
-```ts
-// extensions/quiz/server/seeders/001-demo-attempts.ts
-import { defineSeeder } from '#modular'
-
-export default defineSeeder({
-  async run({ db, log }) { await db.upsert('attempts', [...]); log('done') },
-})
-```
-
-Seeders load initial or demo data and **are not recorded**: write them to be
-idempotent. Run with `useModularSeeders().run({ extensions?, names? })` (extensions
-switched off are skipped unless `includeInactive`). Provide the context with the
-`modular:seeder-context` filter and `ModularSeederContext`, exactly like migrations.
-
-## Events
-
-`modular:extension-toggled` fires (as an action on the hook bus) whenever
-`useModularToggles().set(id, active)` succeeds — use it to clear caches or audit changes:
-
-```ts
-useModularServerHooks().addAction('modular:extension-toggled', (id, active) => audit(id, active))
-```
-
-## Tasks
-
-With `modular.tasks: true` the module registers Nitro tasks (it enables Nitro's
-`experimental.tasks`):
-
-| Task | Payload | Effect |
-|------|---------|--------|
-| `modular:list` | | Extensions and their activation state |
-| `modular:migrate` | `extensions`, `includeInactive` | Run pending migrations |
-| `modular:migrate:status` | | Applied / pending / unknown per extension |
-| `modular:migrate:rollback` | `extension`, `steps` | Revert the last migrations of one extension |
-| `modular:migrate:reset` | `confirm: true`, `extensions` | Revert everything |
-| `modular:migrate:refresh` | `confirm: true`, `extensions` | Revert, then re-apply everything |
-| `modular:seed` | `extensions`, `names`, `includeInactive` | Run seeders |
-
-```bash
-npx nuxt task run modular:migrate:status          # against the dev server (nuxt dev)
-npx nuxt task run modular:seed --payload '{"extensions":["quiz"]}'
-```
-
-Failures make the command exit non-zero. Nitro only serves `/_nitro/tasks` in
-development; in production call `runTask('modular:migrate')` from your own entry
-point, or use `migrations.auto`.
-
-## Error isolation
-
-Each slot renders inside its own boundary:
-
-- **During SSR**, an error is recorded in the payload and swallowed; the rest of the page renders.
-- **During hydration**, a slot that failed on the server adopts the server markup as-is (no mismatch) and switches to the fallback after mount.
-- **After hydration**, the fallback replaces the slot immediately.
-
-Errors that happen *only* in the browser while hydrating still produce one Vue
-hydration warning, because the server and client genuinely rendered different content.
-
-## Limitations
-
-- Each slot adds a `display: contents` wrapper element. Inside tables use an
-  outlet-level structure that accepts it (or set `item-tag`).
-- Manifests are evaluated at build time; editing one restarts the dev server.
-- Two extensions (or an extension and the host) serving the same route and method: the
-  build warns, and Nitro answers with only one of them.
-- Session overrides (`setModuleActive`) only affect the UI and pages; use persistent
-  toggles to switch off server routes and hooks.
-- With Nitro storage the migration lock is best-effort (no atomic compare-and-set); configure `modular.database`
-  when several instances run migrations (`migrations.auto`) at the same time.
-
-## Testing extensions
-
-`@nuxt-modular/core/runtime` is plain TypeScript: unit-test registry logic with
-`createRegistryState`, `resolveSlots` and `resolveNavigation`, handlers with
-`createHookBus`, and migrations or seeders with `runMigrationsUp(...)` /
-`runSeeders(...)` plus `createMemoryLedger()` — no Nuxt required.
+Issues and pull requests are welcome: see [CONTRIBUTING](https://github.com/githubthinnd/nuxt-modular/blob/master/CONTRIBUTING.md).
+Report vulnerabilities privately ([SECURITY](https://github.com/githubthinnd/nuxt-modular/blob/master/SECURITY.md)).
 
 ## License
 
-MIT
+[MIT](https://github.com/githubthinnd/nuxt-modular/blob/master/LICENSE) © Nhữ Duy Thìn
