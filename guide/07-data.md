@@ -14,6 +14,7 @@
 | SQLite | `'sqlite:./.data/modular.db'` | none (Node ≥ 22.5 built-in); or `better-sqlite3`, `@libsql/client` |
 | PostgreSQL | `'postgresql://user:pass@host/db'` | `pg` |
 | MySQL / MariaDB | `'mysql://user:pass@host/db'` | `mysql2` |
+| PostgreSQL in-process (dev and tests) | `'pglite:./.data/pg'` (create the folder first) | `@electric-sql/pglite` |
 
 ```ts
 // nuxt.config.ts: development
