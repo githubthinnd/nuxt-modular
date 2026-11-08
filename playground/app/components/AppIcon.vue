@@ -10,6 +10,15 @@ type Shape =
   | { tag: 'rect'; x: number; y: number; width: number; height: number; rx: number }
 
 const ICONS: Record<string, readonly Shape[]> = {
+  sun: [
+    { tag: 'circle', cx: 12, cy: 12, r: 4 },
+    { tag: 'path', d: 'M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41' },
+  ],
+  moon: [{ tag: 'path', d: 'M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z' }],
+  scan: [
+    { tag: 'path', d: 'M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2' },
+    { tag: 'circle', cx: 12, cy: 12, r: 3 },
+  ],
   logo: [
     { tag: 'path', d: 'M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z' },
     { tag: 'path', d: 'm22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65' },

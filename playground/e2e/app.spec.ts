@@ -133,3 +133,18 @@ test.describe('migrations', () => {
     ])
   })
 })
+
+test.describe('host chrome', () => {
+  test('X-ray frames every extension contribution and the theme can be switched', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByTestId('quiz-metric')).toBeVisible()
+    await page.getByTestId('xray-toggle').click()
+    await expect(page.locator('[data-xray="quiz"]')).toBeVisible()
+    await expect(page.locator('[data-xray="broken-widget"]')).toBeVisible()
+    await page.getByTestId('xray-toggle').click()
+    await expect(page.locator('[data-xray]')).toHaveCount(0)
+
+    await page.getByTestId('theme-toggle').click()
+    await expect(page.locator('html')).toHaveAttribute('data-theme', /^(light|dark)$/)
+  })
+})

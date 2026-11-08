@@ -24,6 +24,7 @@ All notable changes are documented here. The format follows
 
 ### Changed
 
+- Playground UI: top bar with breadcrumbs, light/dark theme switch (cookie, SSR-safe) and an extension X-ray overlay (`X`).
 - Manifests are normalized with `requires` and `config` defaults.
 - The scanner moved from `nuxt-modular` to `@nuxt-modular/core/node` (re-exported internally; no public API change).
 

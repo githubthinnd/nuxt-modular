@@ -4,6 +4,13 @@ Monorepo for **[nuxt-modular](./packages/nuxt/README.md)**: a Nuxt module that t
 an app into an extensible host platform (outlets, navigation, permissions, pages,
 server routes and an action/filter hook bus, all SSR-safe).
 
+<p align="center">
+  <img src="./assets/demo.gif" alt="Playground demo: X-ray of extension contributions, role-based navigation, a quiz scored by a server filter hook with settings, and an extension switched off at runtime" width="860">
+</p>
+
+<p align="center"><sub>The playground: press <kbd>X</kbd> to outline what each extension contributes, switch roles to change navigation and slots,
+take the quiz (a server filter hook adds a bonus configured in the manifest), then switch an extension off and watch its UI disappear.</sub></p>
+
 | Path | Package | Purpose |
 |------|---------|---------|
 | `packages/core` | `@nuxt-modular/core` | Framework-agnostic manifest schemas, registry, permissions, hook bus, migrations, seeders, semver, scanner |
