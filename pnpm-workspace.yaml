@@ -18,7 +18,7 @@ catalog:
   "@playwright/test": ^1.65.0
   "@types/node": ^24.0.0
   "@vue/test-utils": ^2.5.1
-  db0: ^0.3.4
+  db0: ^0.4.2
   h3: ^1.15.11
   happy-dom: ^21.0.4
   jiti: ^2.7.0
