@@ -6,6 +6,8 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-09
+
 ### Added
 
 - **Standard extension layout.** `make:extension` and the guided setup now create one architecture: `shared/` types and
