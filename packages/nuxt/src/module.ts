@@ -32,6 +32,7 @@ import {
 } from '@nuxt-modular/core'
 import { dirname, join, relative, resolve } from 'pathe'
 import { addDevtoolsTypes, setupDevtools } from './devtools'
+import { isCI, wantsGuidedSetup } from './setup-guide'
 import { CONNECTOR_DRIVERS, connectorModule, type DatabaseInput, resolveDatabaseInput } from './runtime/utils/database-options'
 import { glob } from 'tinyglobby'
 import {
@@ -167,6 +168,8 @@ const taskName = (file: string): string => `modular:${file.replace('-', ':')}`
 export default defineNuxtModule<ModuleOptions>().with({
   meta: {
     name: 'nuxt-modular',
+    // Nuxt only calls `onInstall` for modules whose meta has both a name and a version.
+    version: readOwnVersion() ?? '0.0.0',
     configKey: 'modular',
     compatibility: { nuxt: '>=3.13.0' },
   },
@@ -180,6 +183,25 @@ export default defineNuxtModule<ModuleOptions>().with({
     config: {},
     database: false,
     tasks: false,
+  },
+  /**
+   * Runs once per project, the first time the module starts after being added.
+   * `nuxi module add nuxt-modular` triggers the guided setup (questions, then a working host);
+   * any other way of adding the module only gets a hint, so a plain install stays untouched.
+   */
+  async onInstall(nuxt) {
+    const logger = useLogger('nuxt-modular')
+    const context = { argv: process.argv, env: process.env, stdinIsTTY: Boolean(process.stdin.isTTY), stdoutIsTTY: Boolean(process.stdout.isTTY) }
+    if (!wantsGuidedSetup(context)) {
+      if (!isCI(process.env)) logger.info('Run `npx nuxt-modular init` for a guided setup (config, permissions, host shell, starter extension).')
+      return
+    }
+    try {
+      const { processIO, runInit } = await import('@nuxt-modular/cli')
+      await runInit(processIO(nuxt.options.rootDir), { guided: true })
+    } catch (error) {
+      logger.warn(`Guided setup stopped: ${error instanceof Error ? error.message : String(error)}\nRun \`npx nuxt-modular init\` to try again.`)
+    }
   },
   async setup(options, nuxt) {
     const logger = useLogger('nuxt-modular')

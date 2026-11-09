@@ -38,9 +38,18 @@ they appear with **outlets** and who may see them with **permissions**.
 
 ## Quick start
 
+Inside a Nuxt project (to start one: `npx nuxi@latest init my-app`):
+
 ```bash
-npx nuxi module add nuxt-modular        # or: pnpm add nuxt-modular
+npx nuxi module add nuxt-modular
 ```
+
+This installs the module, registers it and asks a few questions (database, roles, a starter extension, a host shell).
+Press Enter to accept the defaults and you get a working app: a menu, a home page with an outlet, and a starter
+extension with a page, an API route and, with a database, a migration and a seeder. Run the same setup later with
+`npx nuxt-modular init`.
+
+Prefer to wire it up yourself? A plain `pnpm add nuxt-modular` changes nothing; register the module and you are set:
 
 ```ts
 // nuxt.config.ts
@@ -49,7 +58,7 @@ export default defineNuxtConfig({
 })
 ```
 
-Create an extension (or run `npx @nuxt-modular/cli make:extension quiz`):
+Create an extension (or run `npx nuxt-modular make:extension quiz`):
 
 ```ts
 // extensions/quiz/manifest.ts

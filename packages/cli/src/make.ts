@@ -102,7 +102,12 @@ export function makeExtension(io: CommandIO, id: string, options: MakeOptions & 
   }
   io.out(`Creating extension "${id}"`)
   const written = write(io, files, options.force)
-  io.out(`\nNext: run your app; the extension is picked up from ${relative(io.cwd, root) || '.'}/${id}.`)
+  io.out(`\nNext: the extension is picked up from ${relative(io.cwd, root) || '.'}/${id} when the app starts.`)
+  if (!minimal) {
+    io.out(`- Add the roles that may see it to \`defaultRoles\` in ${id}/manifest.ts (it is empty, so nobody sees it yet).`)
+    io.out('- Its widget renders in <PluginOutlet name="dashboard.widgets" />; add that outlet to a page of the host.')
+    io.out('- Set up a host in one go with "nuxt-modular init".')
+  }
   return written
 }
 

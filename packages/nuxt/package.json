@@ -47,6 +47,9 @@
     }
   },
   "main": "./dist/module.mjs",
+  "bin": {
+    "nuxt-modular": "./bin/nuxt-modular.mjs"
+  },
   "typesVersions": {
     "*": {
       ".": [
@@ -55,6 +58,7 @@
     }
   },
   "files": [
+    "bin",
     "dist"
   ],
   "scripts": {
@@ -64,6 +68,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@nuxt-modular/cli": "workspace:*",
     "@nuxt-modular/core": "workspace:*",
     "@nuxt/devtools-kit": "catalog:",
     "@nuxt/kit": "catalog:",

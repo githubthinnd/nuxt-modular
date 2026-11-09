@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module'
 import { parseArgs } from 'node:util'
+import { runInit } from './init'
 import { listExtensions, validateExtensions } from './inspect'
 import { CliError, type CommandIO, processIO } from './io'
 import { makeApi, makeComponent, makeExtension, makeHook, makeMigration, makePage, makePlugin, makeSeeder } from './make'
@@ -7,6 +8,7 @@ import { makeApi, makeComponent, makeExtension, makeHook, makeMigration, makePag
 export { CliError, processIO } from './io'
 export type { CommandIO } from './io'
 export { listExtensions, scanAll, validateExtensions } from './inspect'
+export * from './init'
 export {
   makeApi,
   makeComponent,
@@ -25,6 +27,7 @@ const HELP = `nuxt-modular — scaffolding and diagnostics for extensions
 Usage: nuxt-modular <command> [options]
 
 Commands:
+  init                                  Guided setup of a Nuxt project (config, permissions, host shell, starter extension)
   list                                  List extensions and what they contribute
   validate                              Validate manifests, references, requirements and route conflicts
   make:extension <id>                   Create an extension       [--minimal]
@@ -38,6 +41,13 @@ Commands:
 
 Options:
   --dir <path>        Extensions directory (default: extensions)
+  -y, --yes           init: accept the defaults instead of asking (needed without a terminal)
+  --database <name>   init: none | sqlite | postgresql | mysql
+  --roles <a,b>       init: roles of the app (default: admin,member)
+  --extension <id>    init: id of the starter extension (default: hello)
+  --no-starter        init: do not create a starter extension
+  --no-shell          init: do not generate app.vue and a home page
+  --no-install        init: do not install the database driver
   --force             Overwrite existing files
   --json              Machine-readable output (list, validate)
   --strict            Treat warnings as errors (validate)
@@ -74,6 +84,13 @@ export async function main(argv: readonly string[], io: CommandIO = processIO())
         name: { type: 'string' },
         mode: { type: 'string' },
         'host-version': { type: 'string' },
+        yes: { type: 'boolean', short: 'y', default: false },
+        database: { type: 'string' },
+        roles: { type: 'string' },
+        extension: { type: 'string' },
+        'no-starter': { type: 'boolean', default: false },
+        'no-shell': { type: 'boolean', default: false },
+        'no-install': { type: 'boolean', default: false },
         version: { type: 'boolean', short: 'v', default: false },
         help: { type: 'boolean', short: 'h', default: false },
       },
@@ -88,6 +105,18 @@ export async function main(argv: readonly string[], io: CommandIO = processIO())
     }
 
     switch (command) {
+      case 'init':
+        need(0, 'init [--yes] [--database sqlite] [--roles admin,member] [--extension hello]')
+        return await runInit(io, {
+          yes: values.yes,
+          ...(values.dir !== 'extensions' ? { dir: values.dir } : {}),
+          ...(values.database ? { database: values.database } : {}),
+          ...(values.roles ? { roles: values.roles } : {}),
+          ...(values.extension ? { extension: values.extension } : {}),
+          noStarter: values['no-starter'],
+          noShell: values['no-shell'],
+          noInstall: values['no-install'],
+        })
       case 'list':
         return await listExtensions(io, { dir: values.dir, json: values.json })
       case 'validate':

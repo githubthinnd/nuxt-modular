@@ -11,8 +11,11 @@ pnpm add -D @nuxt-modular/cli
 npx nuxt-modular --help
 ```
 
+The same command is also available as `npx nuxt-modular` once the `nuxt-modular` module is installed.
+
 | Command | What it does |
 |---------|--------------|
+| `init` | Guided setup of a Nuxt project: config, permissions plugin, optional host shell and a starter extension (`--yes` accepts the defaults) |
 | `make:extension <id>` | Manifest, README, a slot component, a page and an API route (`--minimal`: manifest only) |
 | `make:component <ext> <Name>` | `components/<Name>.vue` and the slot reference to use |
 | `make:page <ext> <path>` | `pages/<path>.vue`, e.g. `quiz/[id]` → `/quiz/:id` |

@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@nuxt-modular/core": "workspace:*",
+    "consola": "catalog:",
     "pathe": "catalog:"
   },
   "devDependencies": {

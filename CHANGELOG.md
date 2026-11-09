@@ -6,6 +6,23 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Guided setup**: `npx nuxi module add nuxt-modular` now asks a few questions right after installing (database, roles,
+  starter extension, host shell, migrations and tasks) and writes a working host: the `modular` options in
+  `nuxt.config`, a permissions plugin, an optional `app.vue` shell with a home page and outlet, and a starter extension
+  (with a migration and a seeder when a database is chosen). A plain `npm install nuxt-modular` still changes nothing.
+- `nuxt-modular init` (also `npx nuxt-modular init`): the same setup on demand, with `--yes`, `--database`, `--roles`,
+  `--extension`, `--no-starter`, `--no-shell` and `--no-install` for scripts and CI. Existing files are never overwritten.
+- The `nuxt-modular` package now ships the `nuxt-modular` command, so `npx nuxt-modular make:extension ...` works as soon
+  as the module is installed. It depends on `@nuxt-modular/cli`.
+- `make:extension` explains how to make the new extension visible (`defaultRoles`, the outlet, `init`).
+
+### Fixed
+
+- The module declares its version in its meta so Nuxt runs its install hook; it records the setup in `.nuxtrc`
+  (ignored in the playground).
+
 ## [1.0.2] - 2026-11-09
 
 ### Changed

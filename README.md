@@ -34,9 +34,17 @@ from each other's failures, and render consistently on the server and the client
 
 ## Quick start
 
+Inside a Nuxt project (to start one: `npx nuxi@latest init my-app`):
+
 ```bash
 npx nuxi module add nuxt-modular
 ```
+
+The module is installed and registered, then a short guided setup asks about the database, roles, a starter
+extension and a host shell, and writes a working app. Press Enter to accept the defaults. Run it again at any time
+with `npx nuxt-modular init`.
+
+A plain `pnpm add nuxt-modular` changes nothing in your project. Register the module yourself:
 
 ```ts
 // nuxt.config.ts
@@ -46,7 +54,7 @@ export default defineNuxtConfig({
 ```
 
 ```bash
-npx @nuxt-modular/cli make:extension quiz
+npx nuxt-modular make:extension quiz
 ```
 
 Place an outlet in the host where extensions may contribute UI:
