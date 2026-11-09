@@ -1,3 +1,12 @@
+# Publishes a tagged version to npm with provenance, using npm Trusted Publishing (OIDC): no token is stored.
+#
+# One-time setup on npmjs.com, for each of the three packages (nuxt-modular, @nuxt-modular/core, @nuxt-modular/cli):
+#   package -> Settings -> Trusted Publisher -> GitHub Actions
+#   organization or user: githubthinnd, repository: nuxt-modular, workflow filename: release.yml
+#
+# Release with: bump "version" in the three packages/*/package.json, update CHANGELOG.md, commit,
+# `git tag vX.Y.Z`, `git push origin master vX.Y.Z`. A version that is already on npm is skipped,
+# so a release done by hand does not fail this workflow.
 name: Release
 
 on:
@@ -12,11 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # npm provenance
+      id-token: write # npm trusted publishing and provenance
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: pnpm
@@ -27,7 +36,6 @@ jobs:
             v=$(node -p "require('./packages/$pkg/package.json').version")
             [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "::error::packages/$pkg is $v, tag is $GITHUB_REF_NAME"; exit 1; }
           done
-      # A version that is already on npm (for example published by hand) must not fail the run.
       - name: Find versions not yet on npm
         id: state
         run: |
@@ -43,17 +51,39 @@ jobs:
             fi
           done
           echo "pending=$pending" >> "$GITHUB_OUTPUT"
-      - name: Require NPM_TOKEN
-        if: steps.state.outputs.pending == '1'
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          [ -n "$NPM_TOKEN" ] || { echo "::error::Repository secret NPM_TOKEN is missing. Add an npm automation token (Settings > Secrets and variables > Actions), or publish by hand as described in PUBLISHING.md."; exit 1; }
       - if: steps.state.outputs.pending == '1'
         run: pnpm install --frozen-lockfile
       - if: steps.state.outputs.pending == '1'
         run: pnpm check
-      - if: steps.state.outputs.pending == '1'
-        run: pnpm -r --filter "./packages/**" publish --access public --provenance --no-git-checks
+      - name: Publish (core first, then cli, then the module; pnpm orders them by dependency)
+        if: steps.state.outputs.pending == '1'
+        run: |
+          TAG=$(node -p "require('./packages/core/package.json').version.includes('-') ? 'next' : 'latest'")
+          pnpm -r --filter "./packages/**" publish --access public --provenance --no-git-checks --tag "$TAG"
+
+  github-release:
+    # A GitHub Release for the tag, with the matching CHANGELOG section as its notes.
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Create the release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then echo "See CHANGELOG.md" > notes.md; fi
+          flags=""
+          case "$version" in *-*) flags="--prerelease" ;; esac
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists"
+          else
+            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag $flags
+          fi

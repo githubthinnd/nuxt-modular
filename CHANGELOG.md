@@ -6,6 +6,12 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Release workflow: publishes with npm Trusted Publishing (no `NPM_TOKEN` secret), pins its actions by commit,
+  uses the `next` dist-tag for pre-releases and creates the GitHub release from the changelog. Setup is in
+  `PUBLISHING.md`.
+
 ## [1.1.0] - 2026-11-09
 
 ### Added
