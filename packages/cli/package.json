@@ -1,6 +1,6 @@
 {
   "name": "@nuxt-modular/cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Command line for nuxt-modular: scaffold extensions (make:extension, make:migration, ...) and validate manifests in CI.",
   "keywords": [
     "nuxt-modular",

@@ -6,6 +6,12 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-09
+
+First version published to npm, with the same content as 1.0.0. `1.0.0` was never published: the number is permanently
+reserved on npm for `nuxt-modular` (a former owner's unpublished release), so all three packages moved to `1.0.1` to
+keep their versions aligned.
+
 ## [1.0.0] - 2026-11-08
 
 First stable release of `nuxt-modular`, `@nuxt-modular/core` and `@nuxt-modular/cli`. It includes outlets and slots, navigation,
