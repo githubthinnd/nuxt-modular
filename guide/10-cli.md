@@ -26,16 +26,43 @@ questions.
 | `--no-starter` | Do not create a starter extension. |
 | `--no-shell` | Do not generate `app.vue` and a home page. |
 | `--no-install` | Do not install the database driver (`pg`, `mysql2`). |
+| `--database-url <url>` | Connection URL for PostgreSQL or MySQL, written to the env file. |
+| `--env-file <name>` | Env file that receives the URL (default `.env`). |
 | `--dir <path>` | Extensions directory (default `extensions`). |
 
 It must run inside a Nuxt project (a folder with `nuxt.config.*`). Files that already exist are kept, so running it
 again is safe. Exit code `2` for a usage error such as an invalid role or no terminal without `--yes`.
 
+## Finding the commands
+
+Run `npx nuxt-modular` (or `pnpm modular`, a script the setup adds) for every command, grouped as *Set up*, *Generate*
+and *Inspect*. `npx nuxt-modular help <command>` (or `<command> --help`) shows the options and examples of one command.
+
+## Choosing the database
+
+```bash
+npx nuxt-modular db
+```
+
+Asks for the database and does the rest: sets `modular.database` in `nuxt.config.ts`, writes the connection URL to the
+env file, installs the driver and tells you what happens next. See [Databases](./07-data.md#choosing-and-configuring-the-database).
+
+| Option | Effect |
+|--------|--------|
+| `--database <name>` | `none`, `sqlite`, `postgresql` or `mysql`. Asked when omitted. |
+| `--url <url>` | Connection URL for PostgreSQL or MySQL. Goes to the env file, never to `nuxt.config.ts`. |
+| `-y`, `--yes` | Do not ask; the flags decide. |
+| `--no-install` | Do not install the driver. |
+| `--env-file <name>` | Env file for the URL (default `.env`). |
+
 ## Generators
 
 | Command | Creates |
 |---------|---------|
-| `make:extension <id>` | Manifest, README, a slot component, a page and an API route. `--minimal`: manifest and README only. |
+| `make:extension <id>` | A complete extension in the [standard layout](./14-architecture.md): shared types, API, service, repository, composable, components, page. `--roles a,b` sets who sees it; `--minimal`: manifest and README only. |
+| `make:service <ext> <name>` | `server/services/<name>.service.ts`: business rules. |
+| `make:repository <ext> <name>` | `server/repositories/<name>.repository.ts`: data access, SQL or Nitro storage as the project is configured. |
+| `make:composable <ext> <name>` | `composables/use<Name>.ts`: the app-side data layer, auto-imported. |
 | `make:component <ext> <Name>` | `components/<Name>.vue`; prints the slot reference to use. Accepts folders: `quiz/score-card`. |
 | `make:page <ext> <path>` | `pages/<path>.vue`, e.g. `quiz/[id]` → `/quiz/:id`. |
 | `make:api <ext> <route>` | `server/api/<route>.<method>.ts`. `--method get\|post\|put\|patch\|delete`. |

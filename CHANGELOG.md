@@ -6,6 +6,19 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Standard extension layout.** `make:extension` and the guided setup now create one architecture: `shared/` types and
+  validation, API controllers, `services/`, `repositories/` (SQL or Nitro storage), a composable, presentational
+  components and a container page, with a README that explains the rules. New chapter 14 of the guide.
+- `make:service`, `make:repository` and `make:composable` generate the matching layers; `make:extension --roles`.
+- `composables/` and `utils/` of an extension are auto-imported in its pages and components.
+- `nuxt-modular db`: choose or switch the database in one step: `modular.database` in `nuxt.config`, the connection URL
+  in `.env` (kept out of git), `.env.example`, the driver, and the next steps. `init` asks for the connection URL too
+  (`--database-url`, `--env-file`).
+- Discoverable CLI: `nuxt-modular` lists every command grouped, `nuxt-modular help <command>` shows options and
+  examples, `init` ends with a command cheat sheet and adds a `modular` script (`pnpm modular`).
+
 ## [1.1.1] - 2026-11-09
 
 ### Fixed

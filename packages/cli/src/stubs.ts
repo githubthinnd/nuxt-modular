@@ -115,3 +115,55 @@ export const readmeStub = (id: string): string => `# ${titleCase(id)}
 
 An extension of the host application (see \`manifest.ts\`).
 `
+
+export const serviceStub = (name: string): string => `// Service: the business rules of ${titleCase(name)}. Call repositories from here and throw createError(...) when a
+// rule is broken. A service never reads the request and never knows how data is stored.
+export async function list${pascalCase(name)}(): Promise<unknown[]> {
+  return []
+}
+`
+
+export function repositoryStub(name: string, data: 'sql' | 'storage'): string {
+  const pascal = pascalCase(name)
+  if (data === 'storage') {
+    return `// Repository: data access for ${titleCase(name)}. Items live in Nitro storage (in memory until you configure a driver).
+const storage = () => useStorage('${name}')
+
+export async function findAll(): Promise<unknown[]> {
+  return (await storage().getItem<unknown[]>('items')) ?? []
+}
+`
+  }
+  return `// Repository: data access for ${titleCase(name)}. SQL in, plain objects out; no business rules and no HTTP.
+async function connection() {
+  const database = await useModularDatabase()
+  if (!database) throw createError({ statusCode: 503, statusMessage: 'No database configured: run "npx nuxt-modular db"' })
+  return database.db
+}
+
+export async function findAll${pascal}(): Promise<unknown[]> {
+  const db = await connection()
+  return db.prepare('SELECT * FROM ${name.replace(/-/g, '_')}').all()
+}
+`
+}
+
+export const composableStub = (name: string): string => `/*
+ * Data layer of the app for ${titleCase(name)}: the only place that calls the API. Pages and components use the
+ * state and actions returned here. Auto-imported.
+ */
+export function use${pascalCase(name)}() {
+  const loading = ref(false)
+
+  async function load(): Promise<void> {
+    loading.value = true
+    try {
+      // await $fetch('/api/...')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { loading, load }
+}
+`

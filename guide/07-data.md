@@ -7,7 +7,44 @@
 2. **nuxt-modular's own state.** The migration ledger, a migration lock and persistent feature toggles. By default this
    is kept in Nitro storage; with `modular.database` it lives in SQL tables.
 
-## Choosing a database
+## Choosing and configuring the database
+
+The quickest way is the command, in a terminal inside your Nuxt project:
+
+```bash
+npx nuxt-modular db
+```
+
+It asks which database you want and then, in one step:
+
+1. sets `modular.database` in `nuxt.config.ts` (a comment above it points back to this command),
+2. writes the connection URL of PostgreSQL or MySQL to `.env` as `NUXT_MODULAR_DATABASE_URL` (and keeps `.env` out of
+   git),
+3. documents the variable in `.env.example`,
+4. installs the driver (`pg`, `mysql2`) with your package manager,
+5. tells you what happens next.
+
+```bash
+npx nuxt-modular db --database postgresql --url postgresql://user:pass@localhost:5432/app
+npx nuxt-modular db --database sqlite --yes
+```
+
+**Where the settings live**
+
+| Setting | Place |
+|---------|-------|
+| Which database | `modular.database` in `nuxt.config.ts` |
+| Connection URL (PostgreSQL, MySQL) | `NUXT_MODULAR_DATABASE_URL` in `.env`; production sets it in the environment |
+| Driver | `dependencies` of your `package.json` (`pg`, `mysql2`) |
+
+The URL never goes into `nuxt.config.ts`, so it cannot be committed by accident.
+
+Switching databases starts a new, empty database: the migration ledger is stored in the database, so your migrations
+run again against it (when the server starts with `modular.migrations.auto`, or with `nuxt task run modular:migrate`).
+Existing data is not copied, and extensions that still keep their data in Nitro storage keep doing so until their
+repository is rewritten with SQL ([chapter 14](./14-architecture.md)).
+
+### By hand
 
 | Database | `modular.database` | Driver to install |
 |----------|--------------------|-------------------|

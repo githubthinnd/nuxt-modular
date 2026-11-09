@@ -1,43 +1,19 @@
 import { join } from 'pathe'
 import { CliError } from '../io'
-import {
-  homePageStub,
-  hostShellStub,
-  permissionsPluginStub,
-  starterItemsApiStub,
-  starterManifestStub,
-  starterMigrationStub,
-  starterPageStub,
-  starterPingStub,
-  starterReadmeStub,
-  starterSeederStub,
-  starterWidgetName,
-  starterWidgetStub,
-  tableName,
-} from './templates'
-import type { DatabaseChoice, InitAnswers, InitPlan, PlannedFile, ProjectInfo } from './types'
+import { standardLayout, tableName } from '../layout'
+import { databaseComment, databaseExpression, DATABASE_URL_ENV, DRIVERS, URL_EXAMPLES, validateDatabaseUrl } from './database'
+import { homePageStub, hostShellStub, permissionsPluginStub } from './templates'
+import type { InitAnswers, InitPlan, PlannedFile, ProjectInfo } from './types'
 
-export const DATABASE_URL_ENV = 'NUXT_MODULAR_DATABASE_URL'
-
-const DRIVERS: Record<DatabaseChoice, string | undefined> = {
-  none: undefined,
-  sqlite: undefined, // node:sqlite ships with Node >= 22.5
-  postgresql: 'pg',
-  mysql: 'mysql2',
-}
-
-const URL_EXAMPLES: Partial<Record<DatabaseChoice, string>> = {
-  postgresql: 'postgresql://user:password@localhost:5432/app',
-  mysql: 'mysql://user:password@localhost:3306/app',
-}
+export { DATABASE_URL_ENV } from './database'
 
 /** The `modular: { ... },` entry for nuxt.config, or `undefined` when every option keeps its default. */
 export function configBlock(answers: InitAnswers): string | undefined {
   const lines: string[] = []
   if (answers.extensionsDir !== 'extensions') lines.push(`    extensionsDir: '${answers.extensionsDir}',`)
-  if (answers.database === 'sqlite') lines.push("    database: 'sqlite:./.data/modular.sqlite',")
-  if (answers.database === 'postgresql') lines.push(`    // Connection URL: ${DATABASE_URL_ENV} (see .env.example)\n    database: { connector: 'postgresql' },`)
-  if (answers.database === 'mysql') lines.push(`    // Connection URL: ${DATABASE_URL_ENV} (see .env.example)\n    database: { connector: 'mysql2' },`)
+  if (answers.database !== 'none') {
+    lines.push(...databaseComment(answers.database).map((line) => `    // ${line}`), `    database: ${databaseExpression(answers.database)},`)
+  }
   if (answers.database !== 'none' && answers.autoMigrate) lines.push('    migrations: { auto: true },')
   if (answers.tasks) lines.push('    tasks: true,')
   return lines.length ? `  modular: {\n${lines.join('\n')}\n  },` : undefined
@@ -68,45 +44,40 @@ export function planInit(answers: InitAnswers, project: ProjectInfo): InitPlan {
 
   if (answers.starter) {
     const id = answers.starter
-    const options = { id, roles: answers.roles, database: answers.database }
-    const dir = join(answers.extensionsDir, id)
-    files.push(
-      { path: join(dir, 'manifest.ts'), content: starterManifestStub(options) },
-      { path: join(dir, 'README.md'), content: starterReadmeStub(id) },
-      { path: join(dir, 'components', `${starterWidgetName(id)}.vue`), content: starterWidgetStub(options) },
-      { path: join(dir, 'pages', id, 'index.vue'), content: starterPageStub(options) },
-    )
+    for (const file of standardLayout({ id, roles: answers.roles, data: hasDb ? 'sql' : 'storage' })) {
+      files.push({ path: join(answers.extensionsDir, id, file.path), content: file.content })
+    }
+    notes.push(`Read ${join(answers.extensionsDir, id, 'README.md')}: it explains the layers every extension follows.`)
     if (hasDb) {
-      files.push(
-        { path: join(dir, 'server/api', id, 'items.get.ts'), content: starterItemsApiStub(id) },
-        { path: join(dir, 'server/migrations/001-create-items.ts'), content: starterMigrationStub(id) },
-        { path: join(dir, 'server/seeders/001-demo-items.ts'), content: starterSeederStub(id) },
-      )
       notes.push(
         answers.autoMigrate
           ? `Table "${tableName(id)}" is created when the server starts. Add demo rows with: npx nuxt task run modular:seed (dev server running).`
           : `Create the tables with: npx nuxt task run modular:migrate (dev server running).`,
       )
-    } else {
-      files.push({ path: join(dir, 'server/api', id, 'ping.get.ts'), content: starterPingStub(id) })
     }
   }
 
-  const env: Record<string, string> = {}
   const example = URL_EXAMPLES[answers.database]
-  if (example) {
-    env[DATABASE_URL_ENV] = `# Connection URL for nuxt-modular (also used by your migrations)\n${DATABASE_URL_ENV}=${example}`
-    notes.push(`Set ${DATABASE_URL_ENV} in .env (see .env.example) before starting the server.`)
+  const env: Record<string, string> = {}
+  if (example) env[DATABASE_URL_ENV] = `# Connection URL for nuxt-modular (also used by your migrations)\n${DATABASE_URL_ENV}=${example}`
+  if (example && !answers.databaseUrl) {
+    notes.push(`Set ${DATABASE_URL_ENV} in .env (see .env.example), or run: npx nuxt-modular db --url <connection url>`)
   }
 
   const driver = DRIVERS[answers.database]
   if (driver && !answers.installDriver) notes.push(`Install the ${answers.database} driver: ${project.packageManager} add ${driver}`)
+  notes.push('Change the database later with: npx nuxt-modular db')
 
   return {
     files,
     configBlock: configBlock(answers),
-    scripts: { 'modular:list': 'nuxt-modular list', 'modular:validate': 'nuxt-modular validate --strict' },
+    scripts: {
+      modular: 'nuxt-modular',
+      'modular:list': 'nuxt-modular list',
+      'modular:validate': 'nuxt-modular validate --strict',
+    },
     env,
+    envUrl: answers.databaseUrl || undefined,
     gitignore: answers.database === 'sqlite' ? ['.data'] : [],
     install: driver && answers.installDriver ? [driver] : [],
     notes,
@@ -131,4 +102,6 @@ export function validateAnswers(answers: InitAnswers): void {
   if (answers.starter !== false && (!SLUG.test(answers.starter) || answers.starter.length > 64)) {
     throw new CliError(`Invalid extension id "${answers.starter}": use a kebab-case slug such as "hello"`)
   }
+  const urlProblem = validateDatabaseUrl(answers.database, answers.databaseUrl)
+  if (urlProblem) throw new CliError(`Invalid database URL: ${urlProblem}`)
 }

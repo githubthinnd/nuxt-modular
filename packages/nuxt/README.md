@@ -46,8 +46,9 @@ npx nuxi module add nuxt-modular
 
 This installs the module, registers it and asks a few questions (database, roles, a starter extension, a host shell).
 Press Enter to accept the defaults and you get a working app: a menu, a home page with an outlet, and a starter
-extension with a page, an API route and, with a database, a migration and a seeder. Run the same setup later with
-`npx nuxt-modular init`.
+extension in the standard layout (controllers, service, repository, composable, components, page and, with a database,
+a migration and a seeder). Run the same setup later with `npx nuxt-modular init`, change the database with
+`npx nuxt-modular db`, and list every command by running `npx nuxt-modular`.
 
 Prefer to wire it up yourself? A plain `pnpm add nuxt-modular` changes nothing; register the module and you are set:
 

@@ -1,63 +1,48 @@
 import { createRequire } from 'node:module'
 import { parseArgs } from 'node:util'
+import { runDb } from './db'
+import { commandHelp, overview } from './help'
 import { runInit } from './init'
 import { listExtensions, validateExtensions } from './inspect'
 import { CliError, type CommandIO, processIO } from './io'
-import { makeApi, makeComponent, makeExtension, makeHook, makeMigration, makePage, makePlugin, makeSeeder } from './make'
-
-export { CliError, processIO } from './io'
-export type { CommandIO } from './io'
-export { listExtensions, scanAll, validateExtensions } from './inspect'
-export * from './init'
-export {
+import {
   makeApi,
   makeComponent,
+  makeComposable,
   makeExtension,
   makeHook,
   makeMigration,
   makePage,
   makePlugin,
+  makeRepository,
   makeSeeder,
+  makeService,
+} from './make'
+
+export { CliError, processIO } from './io'
+export type { CommandIO } from './io'
+export { listExtensions, scanAll, validateExtensions } from './inspect'
+export * from './init'
+export { runDb } from './db'
+export type { DbOptions } from './db'
+export { COMMANDS, commandHelp, overview } from './help'
+export { standardLayout } from './layout'
+export type { DataSource, LayoutFile, LayoutOptions } from './layout'
+export {
+  makeApi,
+  makeComponent,
+  makeComposable,
+  makeExtension,
+  makeHook,
+  makeMigration,
+  makePage,
+  makePlugin,
+  makeRepository,
+  makeSeeder,
+  makeService,
   nextSequence,
   slugify,
 } from './make'
-
-const HELP = `nuxt-modular — scaffolding and diagnostics for extensions
-
-Usage: nuxt-modular <command> [options]
-
-Commands:
-  init                                  Guided setup of a Nuxt project (config, permissions, host shell, starter extension)
-  list                                  List extensions and what they contribute
-  validate                              Validate manifests, references, requirements and route conflicts
-  make:extension <id>                   Create an extension       [--minimal]
-  make:component <ext> <Name>           Create a component
-  make:page <ext> <path>                Create a page (e.g. "quiz/[id]")
-  make:api <ext> <route>                Create an API route       [--method get|post|…]
-  make:hook <ext> <hook>                Create a hook handler     [--type action|filter] [--name file]
-  make:plugin <ext> <name>              Create a Nuxt plugin      [--mode client|server]
-  make:migration <ext> <name>           Create the next migration (NNN-name.ts)
-  make:seeder <ext> <name>              Create the next seeder (NNN-name.ts)
-
-Options:
-  --dir <path>        Extensions directory (default: extensions)
-  -y, --yes           init: accept the defaults instead of asking (needed without a terminal)
-  --database <name>   init: none | sqlite | postgresql | mysql
-  --roles <a,b>       init: roles of the app (default: admin,member)
-  --extension <id>    init: id of the starter extension (default: hello)
-  --no-starter        init: do not create a starter extension
-  --no-shell          init: do not generate app.vue and a home page
-  --no-install        init: do not install the database driver
-  --force             Overwrite existing files
-  --json              Machine-readable output (list, validate)
-  --strict            Treat warnings as errors (validate)
-  --host-version <v>  nuxt-modular version for requires.modular checks (validate)
-  -v, --version       Print the version
-  -h, --help          Print this help
-
-Run migrations and seeders with Nitro tasks (set \`modular.tasks: true\`):
-  nuxt task run modular:migrate | modular:migrate:status | modular:seed
-`
 
 function version(): string {
   try {
@@ -91,15 +76,28 @@ export async function main(argv: readonly string[], io: CommandIO = processIO())
         'no-starter': { type: 'boolean', default: false },
         'no-shell': { type: 'boolean', default: false },
         'no-install': { type: 'boolean', default: false },
+        'database-url': { type: 'string' },
+        url: { type: 'string' },
+        'env-file': { type: 'string' },
         version: { type: 'boolean', short: 'v', default: false },
         help: { type: 'boolean', short: 'h', default: false },
       },
     })
     const [command, ...args] = positionals
     if (values.version) return io.out(version()), 0
-    if (values.help || !command || command === 'help') return io.out(HELP), 0
+    if (command === 'help' && args[0]) {
+      const text = commandHelp(args[0])
+      if (!text) throw new CliError(`Unknown command "${args[0]}". Run "nuxt-modular help" for the list.`)
+      return io.out(text), 0
+    }
+    if (values.help && command && command !== 'help') {
+      const text = commandHelp(command)
+      return io.out(text ?? overview()), 0
+    }
+    if (values.help || !command || command === 'help') return io.out(overview()), 0
 
     const make = { dir: values.dir, force: values.force }
+    const envFile = values['env-file'] ? { envFile: values['env-file'] } : {}
     const need = (count: number, usage: string): void => {
       if (args.length !== count) throw new CliError(`Usage: nuxt-modular ${usage}`)
     }
@@ -111,11 +109,22 @@ export async function main(argv: readonly string[], io: CommandIO = processIO())
           yes: values.yes,
           ...(values.dir !== 'extensions' ? { dir: values.dir } : {}),
           ...(values.database ? { database: values.database } : {}),
+          ...(values['database-url'] ? { databaseUrl: values['database-url'] } : {}),
+          ...envFile,
           ...(values.roles ? { roles: values.roles } : {}),
           ...(values.extension ? { extension: values.extension } : {}),
           noStarter: values['no-starter'],
           noShell: values['no-shell'],
           noInstall: values['no-install'],
+        })
+      case 'db':
+        need(0, 'db [--database sqlite] [--url <connection url>] [--yes]')
+        return await runDb(io, {
+          yes: values.yes,
+          ...(values.database ? { database: values.database } : {}),
+          ...(values.url ? { url: values.url } : {}),
+          noInstall: values['no-install'],
+          ...envFile,
         })
       case 'list':
         return await listExtensions(io, { dir: values.dir, json: values.json })
@@ -128,7 +137,23 @@ export async function main(argv: readonly string[], io: CommandIO = processIO())
         })
       case 'make:extension':
         need(1, 'make:extension <id>')
-        makeExtension(io, args[0] as string, { ...make, minimal: values.minimal })
+        makeExtension(io, args[0] as string, {
+          ...make,
+          minimal: values.minimal,
+          ...(values.roles ? { roles: values.roles.split(',').map((role) => role.trim()).filter(Boolean) } : {}),
+        })
+        return 0
+      case 'make:service':
+        need(2, 'make:service <extension> <name>')
+        makeService(io, args[0] as string, args[1] as string, make)
+        return 0
+      case 'make:repository':
+        need(2, 'make:repository <extension> <name>')
+        makeRepository(io, args[0] as string, args[1] as string, make)
+        return 0
+      case 'make:composable':
+        need(2, 'make:composable <extension> <name>')
+        makeComposable(io, args[0] as string, args[1] as string, make)
         return 0
       case 'make:component':
         need(2, 'make:component <extension> <Name>')
@@ -163,7 +188,7 @@ export async function main(argv: readonly string[], io: CommandIO = processIO())
         makeSeeder(io, args[0] as string, args[1] as string, make)
         return 0
       default:
-        throw new CliError(`Unknown command "${command}". Run "nuxt-modular --help".`)
+        throw new CliError(`Unknown command "${command}". Run "nuxt-modular help" for the list of commands.`)
     }
   } catch (error) {
     io.err(`error: ${error instanceof Error ? error.message : String(error)}`)

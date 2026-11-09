@@ -32,14 +32,16 @@ the files. Every question has a default, so pressing Enter all the way gives a w
 | Question | What it decides |
 |----------|-----------------|
 | Where should extensions live? | The extensions directory (default `extensions`). |
-| Which database? | SQLite (zero setup), PostgreSQL, MySQL/MariaDB, or none. Adds `modular.database`; for PostgreSQL and MySQL the connection URL goes in `NUXT_MODULAR_DATABASE_URL` and the driver (`pg`, `mysql2`) is installed for you. |
+| Which database? | SQLite (zero setup), PostgreSQL, MySQL/MariaDB, or none. Adds `modular.database`; the driver (`pg`, `mysql2`) is installed for you. |
+| Connection URL? | PostgreSQL and MySQL only. Written to `.env` as `NUXT_MODULAR_DATABASE_URL` (never to `nuxt.config.ts`); leave it empty to fill in later. Change the database any time with `npx nuxt-modular db`. |
 | Which roles does your app have? | The roles granted to the starter extension, and the choices for the next question. |
 | Which role should the visitor have while developing? | The role set by the generated permissions plugin. |
-| Create a starter extension? | A complete extension: manifest, widget, page and API route; with a database also a migration and a seeder. |
+| Create a starter extension? | A complete extension in the [standard layout](./14-architecture.md): shared types, API controllers, service, repository, composable, components and a page; with a database also a migration and a seeder. |
 | Generate a host shell? | `app.vue` with a menu built from the extensions' navigation, and a home page with an outlet. Only offered when `app.vue` is still the default Nuxt welcome page. |
 | Run migrations at startup? Register Nitro tasks? | `modular.migrations.auto` and `modular.tasks` (only with a database). |
 
-The setup also adds the `modular:list` and `modular:validate` scripts to `package.json`. Nothing that already exists is
+The setup also adds the `modular`, `modular:list` and `modular:validate` scripts to `package.json`; run `pnpm modular`
+to see every command the CLI offers. Nothing that already exists is
 overwritten: existing files are kept, and an `app.vue` you changed is left alone. When `nuxt.config.ts` has an unusual
 shape and cannot be edited safely, the setup prints the lines to add instead.
 

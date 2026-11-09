@@ -42,7 +42,8 @@ npx nuxi module add nuxt-modular
 
 The module is installed and registered, then a short guided setup asks about the database, roles, a starter
 extension and a host shell, and writes a working app. Press Enter to accept the defaults. Run it again at any time
-with `npx nuxt-modular init`.
+with `npx nuxt-modular init`. Change the database later with `npx nuxt-modular db`; `npx nuxt-modular` lists every
+command.
 
 A plain `pnpm add nuxt-modular` changes nothing in your project. Register the module yourself:
 

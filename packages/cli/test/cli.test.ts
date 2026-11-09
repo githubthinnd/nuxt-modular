@@ -23,7 +23,21 @@ afterEach(() => rmSync(cwd, { recursive: true, force: true }))
 describe('make:extension', () => {
   it('scaffolds a full extension that validates', async () => {
     expect(await run('make:extension', 'mod-quiz')).toBe(0)
-    for (const file of ['manifest.ts', 'README.md', 'components/ModQuizWidget.vue', 'pages/mod-quiz/index.vue', 'server/api/mod-quiz/ping.get.ts']) {
+    for (const file of [
+      'manifest.ts',
+      'README.md',
+      'shared/item.ts',
+      'server/api/mod-quiz/items/index.get.ts',
+      'server/api/mod-quiz/items/index.post.ts',
+      'server/api/mod-quiz/items/[id].delete.ts',
+      'server/services/item.service.ts',
+      'server/repositories/item.repository.ts',
+      'composables/useModQuizItems.ts',
+      'components/ModQuizWidget.vue',
+      'components/ModQuizItemList.vue',
+      'components/ModQuizItemForm.vue',
+      'pages/mod-quiz/index.vue',
+    ]) {
       expect(existsSync(join(cwd, 'extensions/mod-quiz', file)), file).toBe(true)
     }
     expect(read('extensions/mod-quiz/manifest.ts')).toContain("id: 'mod-quiz'")
@@ -103,7 +117,7 @@ describe('list / validate', () => {
     await run('list', '--json')
     const parsed = JSON.parse(out.join('\n')) as Array<{ id: string; routes: string[] }>
     expect(parsed.map((e) => e.id)).toEqual(['alpha', 'beta'])
-    expect(parsed[0]?.routes).toEqual(['GET /api/alpha/ping'])
+    expect(parsed[0]?.routes).toEqual(['DELETE /api/alpha/items/:id', 'GET /api/alpha/items', 'POST /api/alpha/items'])
   })
 
   it('reports invalid manifests, version conflicts and cycles', async () => {
@@ -130,10 +144,10 @@ describe('list / validate', () => {
   it('warns about route conflicts and --strict makes warnings fail', async () => {
     await run('make:extension', 'one')
     await run('make:extension', 'two', '--minimal')
-    await run('make:api', 'two', 'one/ping')
+    await run('make:api', 'two', 'one/items')
     err.length = 0
     expect(await run('validate')).toBe(0)
-    expect(err.join('\n')).toContain('warning: Route GET /api/one/ping is served by both')
+    expect(err.join('\n')).toContain('warning: Route GET /api/one/items is served by both')
     expect(await run('validate', '--strict')).toBe(1)
     out.length = 0
     await run('validate', '--json')

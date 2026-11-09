@@ -1,10 +1,10 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'pathe'
 import { CliError } from '../io'
-import { hasModularBlock } from './config-patch'
+import { hasModularBlock, readModularDatabase } from './config-patch'
 import type { PackageManagerName, ProjectInfo } from './types'
 
-const CONFIG_FILES = ['nuxt.config.ts', 'nuxt.config.mts', 'nuxt.config.js', 'nuxt.config.mjs'] as const
+export const CONFIG_FILES = ['nuxt.config.ts', 'nuxt.config.mts', 'nuxt.config.js', 'nuxt.config.mjs'] as const
 
 const read = (path: string): string | undefined => (existsSync(path) ? readFileSync(path, 'utf8') : undefined)
 
@@ -71,4 +71,11 @@ export function detectProject(root: string, extensionsDir = 'extensions'): Proje
       existsSync(extensionsRoot) &&
       readdirSync(extensionsRoot, { withFileTypes: true }).some((entry) => entry.isDirectory()),
   }
+}
+
+/** Where sample data lives for a new extension: SQL when the project configures `modular.database`, else Nitro storage. */
+export function detectDataSource(root: string): 'sql' | 'storage' {
+  const file = CONFIG_FILES.find((name) => existsSync(join(root, name)))
+  const database = file ? readModularDatabase(read(join(root, file)) ?? '') : undefined
+  return database && database !== 'false' ? 'sql' : 'storage'
 }

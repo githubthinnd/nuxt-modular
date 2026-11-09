@@ -4,6 +4,7 @@ import {
   addComponent,
   addComponentsDir,
   addImports,
+  addImportsDir,
   addPlugin,
   addRouteMiddleware,
   addServerHandler,
@@ -311,6 +312,11 @@ export default defineNuxtModule<ModuleOptions>().with({
 
     for (const extension of extensions) {
       if (extension.componentsDir) addComponentsDir({ path: extension.componentsDir })
+      // `composables/` and `utils/` of an extension are auto-imported in the app, like in the host.
+      for (const folder of ['composables', 'utils']) {
+        const path = join(extension.dir, folder)
+        if (existsSync(path)) addImportsDir(path)
+      }
       for (const plugin of extension.plugins) addPlugin(plugin)
     }
 

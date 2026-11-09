@@ -172,3 +172,66 @@ export function hasModularBlock(source: string): boolean {
   const open = objectStart(source)
   return open !== -1 && findProperty(source, open, 'modular') !== -1
 }
+
+/** End (exclusive) of the property value that starts at `start`: a top-level comma or `limit`, trailing blanks trimmed. */
+function valueEnd(source: string, start: number, limit: number): number {
+  let depth = 0
+  let end = limit
+  for (let i = start; i < limit; i++) {
+    const skipped = skipLiteral(source, i)
+    if (skipped !== undefined) {
+      i = skipped - 1
+      continue
+    }
+    const char = source[i] as string
+    if (char === '{' || char === '[' || char === '(') depth += 1
+    else if (char === '}' || char === ']' || char === ')') depth -= 1
+    else if (char === ',' && depth === 0) {
+      end = i
+      break
+    }
+  }
+  while (end > start && /\s/.test(source[end - 1] as string)) end -= 1
+  return end
+}
+
+/** Source range of the value at `path` (for example `['modular', 'database']`) in the config object, if present. */
+export function findConfigValue(source: string, path: readonly string[]): { readonly start: number; readonly end: number } | undefined {
+  let open = objectStart(source)
+  if (open === -1) return undefined
+  for (const [index, key] of path.entries()) {
+    const start = findProperty(source, open, key)
+    if (start === -1) return undefined
+    const close = findClosing(source, open)
+    const end = valueEnd(source, start, close === -1 ? source.length : close)
+    if (index === path.length - 1) return { start, end }
+    if (source[start] !== '{') return undefined
+    open = start
+  }
+  return undefined
+}
+
+/** The configured `modular.database` expression as written in the config, or `undefined` when not set. */
+export function readModularDatabase(source: string): string | undefined {
+  const range = findConfigValue(source, ['modular', 'database'])
+  return range ? source.slice(range.start, range.end).trim() : undefined
+}
+
+/**
+ * Sets `modular.database` to `expression` (source text such as `'sqlite:./a.db'` or `{ connector: 'postgresql' }`),
+ * keeping the rest of the file as it is. `comment` is written above the property when it is created.
+ */
+export function setModularDatabase(source: string, expression: string, comment: readonly string[] = []): PatchResult {
+  const existing = findConfigValue(source, ['modular', 'database'])
+  if (existing) {
+    const current = source.slice(existing.start, existing.end)
+    if (current.trim() === expression) return { source, changed: false, manual: [] }
+    return { source: `${source.slice(0, existing.start)}${expression}${source.slice(existing.end)}`, changed: true, manual: [] }
+  }
+  const lines = [...comment.map((line) => `    // ${line}`), `    database: ${expression},`]
+  const modular = findConfigValue(source, ['modular'])
+  if (!modular) return patchNuxtConfig(source, `  modular: {\n${lines.join('\n')}\n  },`)
+  if (source[modular.start] !== '{') return { source, changed: false, manual: [`modular: { database: ${expression} }`] }
+  const at = modular.start + 1
+  return { source: `${source.slice(0, at)}\n${lines.join('\n')}${source.slice(at)}`, changed: true, manual: [] }
+}

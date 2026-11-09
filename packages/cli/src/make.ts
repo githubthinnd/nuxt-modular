@@ -3,15 +3,20 @@ import { componentNameFromPath, pascalCase, routeFromPagePath, serverRouteFromPa
 import { HOOK_NAME_PATTERN, SLUG_PATTERN } from '@nuxt-modular/core'
 import { dirname, isAbsolute, join, relative, resolve } from 'pathe'
 import { CliError, type CommandIO } from './io'
+import { detectDataSource } from './init/project'
+import { type DataSource, standardLayout } from './layout'
 import {
   apiStub,
+  composableStub,
   hookStub,
   manifestStub,
   migrationStub,
   pageStub,
   pluginStub,
   readmeStub,
+  repositoryStub,
   seederStub,
+  serviceStub,
   titleCase,
   widgetStub,
 } from './stubs'
@@ -80,7 +85,11 @@ export function nextSequence(dir: string): string {
   return String(Math.max(0, ...numbers) + 1).padStart(3, '0')
 }
 
-export function makeExtension(io: CommandIO, id: string, options: MakeOptions & { minimal?: boolean }): string[] {
+export function makeExtension(
+  io: CommandIO,
+  id: string,
+  options: MakeOptions & { minimal?: boolean; roles?: readonly string[]; data?: DataSource },
+): string[] {
   if (!SLUG_PATTERN.test(id) || id.length > 64) {
     throw new CliError(`Invalid extension id "${id}": use a kebab-case slug such as "mod-quiz"`)
   }
@@ -88,25 +97,21 @@ export function makeExtension(io: CommandIO, id: string, options: MakeOptions & 
   const dir = join(root, id)
   assertInside(root, dir)
   const minimal = options.minimal ?? false
-  const files: GeneratedFile[] = [
-    { path: join(dir, 'manifest.ts'), content: manifestStub(id, { minimal }) },
-    { path: join(dir, 'README.md'), content: readmeStub(id) },
-  ]
-  if (!minimal) {
-    const widget = `${pascalCase(id)}Widget`
-    files.push(
-      { path: join(dir, 'components', `${widget}.vue`), content: widgetStub(widget) },
-      { path: join(dir, 'pages', id, 'index.vue'), content: pageStub(titleCase(id)) },
-      { path: join(dir, 'server/api', id, 'ping.get.ts'), content: apiStub(id, `/api/${id}/ping`, 'get') },
-    )
-  }
-  io.out(`Creating extension "${id}"`)
+  const data = options.data ?? detectDataSource(io.cwd)
+  const files: GeneratedFile[] = minimal
+    ? [
+        { path: join(dir, 'manifest.ts'), content: manifestStub(id, { minimal }) },
+        { path: join(dir, 'README.md'), content: readmeStub(id) },
+      ]
+    : standardLayout({ id, roles: options.roles ?? [], data }).map((file) => ({ path: join(dir, file.path), content: file.content }))
+  io.out(`Creating extension "${id}"${minimal ? ' (minimal)' : ` (${data === 'sql' ? 'SQL' : 'storage'} data layer)`}`)
   const written = write(io, files, options.force)
   io.out(`\nNext: the extension is picked up from ${relative(io.cwd, root) || '.'}/${id} when the app starts.`)
   if (!minimal) {
-    io.out(`- Add the roles that may see it to \`defaultRoles\` in ${id}/manifest.ts (it is empty, so nobody sees it yet).`)
+    io.out(`- Read ${id}/README.md: it explains the layers (shared, server api/services/repositories, composables, components, pages).`)
+    if (!options.roles?.length) io.out(`- Add the roles that may see it to \`defaultRoles\` in ${id}/manifest.ts (or re-run with --roles admin,member).`)
     io.out('- Its widget renders in <PluginOutlet name="dashboard.widgets" />; add that outlet to a page of the host.')
-    io.out('- Set up a host in one go with "nuxt-modular init".')
+    if (data === 'storage') io.out('- Items are kept in Nitro storage (memory). Use a database instead with: npx nuxt-modular db')
   }
   return written
 }
@@ -192,3 +197,35 @@ export const makeMigration = (io: CommandIO, extension: string, name: string, op
 
 export const makeSeeder = (io: CommandIO, extension: string, name: string, options: MakeOptions): string[] =>
   makeOrdered(io, 'seeders', extension, name, options)
+
+function layerFile(io: CommandIO, extension: string, options: MakeOptions, folder: string, file: string, content: string): string[] {
+  const dir = extensionDir(io, options, extension)
+  const target = join(dir, folder, file)
+  assertInside(dir, target)
+  return write(io, [{ path: target, content }], options.force)
+}
+
+export function makeService(io: CommandIO, extension: string, name: string, options: MakeOptions): string[] {
+  const slug = slugify(name)
+  if (!slug) throw new CliError(`Invalid service name "${name}"`)
+  const written = layerFile(io, extension, options, 'server/services', `${slug}.service.ts`, serviceStub(slug))
+  io.out(`\nCall it from a controller in server/api; keep storage access in a repository (make:repository ${extension} ${slug}).`)
+  return written
+}
+
+export function makeRepository(io: CommandIO, extension: string, name: string, options: MakeOptions & { data?: DataSource }): string[] {
+  const slug = slugify(name)
+  if (!slug) throw new CliError(`Invalid repository name "${name}"`)
+  const data = options.data ?? detectDataSource(io.cwd)
+  const written = layerFile(io, extension, options, 'server/repositories', `${slug}.repository.ts`, repositoryStub(slug, data))
+  io.out(`\n${data === 'sql' ? 'SQL' : 'Storage'} repository. Only services import it.`)
+  return written
+}
+
+export function makeComposable(io: CommandIO, extension: string, name: string, options: MakeOptions): string[] {
+  const slug = slugify(name)
+  if (!slug) throw new CliError(`Invalid composable name "${name}"`)
+  const written = layerFile(io, extension, options, 'composables', `use${pascalCase(slug)}.ts`, composableStub(slug))
+  io.out(`\nAuto-imported as use${pascalCase(slug)}() in this extension's pages and components.`)
+  return written
+}

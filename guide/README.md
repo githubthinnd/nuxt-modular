@@ -18,6 +18,7 @@ templates: installation, concepts, every feature, deployment and troubleshooting
 | [11. Testing and deployment](./11-testing-and-deployment.md) | Unit tests, CI, production checklist |
 | [12. Troubleshooting and FAQ](./12-troubleshooting.md) | Symptoms, causes, fixes |
 | [13. API reference](./13-api-reference.md) | Composables, server utilities, core exports |
+| [14. Extension architecture](./14-architecture.md) | The standard layout: controllers, services, repositories, composables, components |
 
 New here? Read chapters 1 and 2, then jump to the feature you need. A runnable example lives in the
 [`playground/`](https://github.com/githubthinnd/nuxt-modular/tree/master/playground) directory of the repository.

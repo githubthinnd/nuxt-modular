@@ -11,12 +11,17 @@ pnpm add -D @nuxt-modular/cli
 npx nuxt-modular --help
 ```
 
-The same command is also available as `npx nuxt-modular` once the `nuxt-modular` module is installed.
+The same command is also available as `npx nuxt-modular` once the `nuxt-modular` module is installed. Run it without
+arguments to list every command, or `npx nuxt-modular help <command>` for the options and examples of one.
 
 | Command | What it does |
 |---------|--------------|
-| `init` | Guided setup of a Nuxt project: config, permissions plugin, optional host shell and a starter extension (`--yes` accepts the defaults) |
-| `make:extension <id>` | Manifest, README, a slot component, a page and an API route (`--minimal`: manifest only) |
+| `init` | Guided setup of a Nuxt project: config, permissions plugin, optional host shell, database and a starter extension (`--yes` accepts the defaults) |
+| `db` | Choose or switch the database: `modular.database`, the connection URL in `.env`, the driver |
+| `make:extension <id>` | A complete extension in the standard layout: shared types, API, service, repository, composable, components, page (`--roles`, `--minimal`) |
+| `make:service <ext> <name>` | `server/services/<name>.service.ts`: business rules |
+| `make:repository <ext> <name>` | `server/repositories/<name>.repository.ts`: data access (SQL or storage) |
+| `make:composable <ext> <name>` | `composables/use<Name>.ts`: the app-side data layer |
 | `make:component <ext> <Name>` | `components/<Name>.vue` and the slot reference to use |
 | `make:page <ext> <path>` | `pages/<path>.vue`, e.g. `quiz/[id]` → `/quiz/:id` |
 | `make:api <ext> <route>` | `server/api/<route>.<method>.ts` (`--method get|post|…`) |

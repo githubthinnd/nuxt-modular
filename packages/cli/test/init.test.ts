@@ -152,6 +152,7 @@ describe('planInit', () => {
   const answers = (overrides: Partial<InitAnswers> = {}): InitAnswers => ({
     extensionsDir: 'extensions',
     database: 'sqlite',
+    databaseUrl: '',
     roles: ['admin', 'member'],
     defaultRole: 'member',
     starter: 'hello',
@@ -175,17 +176,25 @@ describe('planInit', () => {
         'app/app.vue',
         'app/pages/index.vue',
         'extensions/hello/manifest.ts',
+        'extensions/hello/shared/item.ts',
         'extensions/hello/components/HelloWidget.vue',
+        'extensions/hello/components/HelloItemList.vue',
+        'extensions/hello/components/HelloItemForm.vue',
+        'extensions/hello/composables/useHelloItems.ts',
         'extensions/hello/pages/hello/index.vue',
-        'extensions/hello/server/api/hello/items.get.ts',
+        'extensions/hello/server/api/hello/items/index.get.ts',
+        'extensions/hello/server/api/hello/items/index.post.ts',
+        'extensions/hello/server/api/hello/items/[id].delete.ts',
+        'extensions/hello/server/services/item.service.ts',
+        'extensions/hello/server/repositories/item.repository.ts',
         'extensions/hello/server/migrations/001-create-items.ts',
         'extensions/hello/server/seeders/001-demo-items.ts',
       ]),
     )
     expect(plan.files.find((file) => file.path === 'app/app.vue')?.overwrite).toBe(true)
-    expect(plan.configBlock).toBe(
-      "  modular: {\n    database: 'sqlite:./.data/modular.sqlite',\n    migrations: { auto: true },\n    tasks: true,\n  },",
-    )
+    expect(plan.configBlock).toContain("    database: 'sqlite:./.data/modular.sqlite',\n    migrations: { auto: true },\n    tasks: true,\n  },")
+    expect(plan.configBlock).toContain('Switch it any time with: npx nuxt-modular db')
+    expect(plan.scripts).toMatchObject({ modular: 'nuxt-modular' })
     expect(plan.gitignore).toEqual(['.data'])
     expect(plan.install).toEqual([])
   })
@@ -206,12 +215,21 @@ describe('planInit', () => {
     expect(plan.notes.join('\n')).toContain('add mysql2')
   })
 
-  it('without a database: no migrations, a ping route, no config block', () => {
+  it('without a database: the same layers over Nitro storage, no migrations, no config block', () => {
     const plan = planInit(answers({ database: 'none', tasks: false, autoMigrate: false }), project())
     const paths = plan.files.map((file) => file.path)
-    expect(paths).toContain('extensions/hello/server/api/hello/ping.get.ts')
-    expect(paths.some((path) => path.includes('migrations'))).toBe(false)
+    expect(paths).toContain('extensions/hello/server/repositories/item.repository.ts')
+    expect(paths.some((path) => path.includes('migrations') || path.includes('seeders'))).toBe(false)
+    expect(plan.files.find((file) => file.path.endsWith('item.repository.ts'))?.content).toContain('useStorage')
     expect(plan.configBlock).toBeUndefined()
+  })
+
+  it('writes a given connection URL to the env file, not to the config', () => {
+    const plan = planInit(answers({ database: 'postgresql', databaseUrl: 'postgresql://u:p@localhost:5432/app' }), project())
+    expect(plan.envUrl).toBe('postgresql://u:p@localhost:5432/app')
+    expect(plan.configBlock).not.toContain('localhost')
+    expect(plan.notes.join('\n')).not.toContain('Set NUXT_MODULAR_DATABASE_URL')
+    expect(planInit(answers({ database: 'postgresql' }), project()).notes.join('\n')).toContain('Set NUXT_MODULAR_DATABASE_URL')
   })
 
   it('writes the Nuxt 3 layout without the app/ prefix', () => {
@@ -244,6 +262,7 @@ describe('validateAnswers', () => {
   const base: InitAnswers = {
     extensionsDir: 'extensions',
     database: 'none',
+    databaseUrl: '',
     roles: ['admin'],
     defaultRole: 'admin',
     starter: 'hello',
@@ -260,6 +279,8 @@ describe('validateAnswers', () => {
     [{ roles: ['a', 'a'], defaultRole: 'a' }, 'unique'],
     [{ defaultRole: 'ghost' }, 'not one of'],
     [{ starter: 'Not Valid' }, 'Invalid extension id'],
+    [{ database: 'postgresql', databaseUrl: 'mysql://x/y' }, 'Invalid database URL'],
+    [{ database: 'sqlite', databaseUrl: 'postgresql://x/y' }, 'Invalid database URL'],
   ] satisfies [Partial<InitAnswers>, string][])('rejects %j', (override, message) => {
     expect(() => validateAnswers({ ...base, ...override })).toThrow(message)
   })
@@ -294,7 +315,8 @@ describe('make:extension hint', () => {
     nuxtProject()
     expect(await main(['make:extension', 'shop'], io())).toBe(0)
     expect(out.join('\n')).toContain('defaultRoles')
-    expect(out.join('\n')).toContain('nuxt-modular init')
+    expect(out.join('\n')).toContain('README.md')
+    expect(out.join('\n')).toContain('npx nuxt-modular db')
   })
 })
 

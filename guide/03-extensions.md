@@ -5,11 +5,16 @@
 ```
 extensions/quiz/
   manifest.ts          required
+  shared/              types and validation used by both sides (your own folder, imported with relative paths)
   components/          auto-registered; slot components resolve here
+  composables/         auto-imported in the extension's pages and components
+  utils/               auto-imported helpers for the app side
   pages/               added to the router
   plugins/             Nuxt plugins (top level files only)
   server/
-    api/               Nitro API routes      → /api/…
+    api/               Nitro API routes      → /api/…   (controllers)
+    services/          business rules        (your own folder, imported explicitly)
+    repositories/      data access           (your own folder, imported explicitly)
     routes/            Nitro routes          → /…
     middleware/        Nitro middleware
     plugins/           Nitro plugins
@@ -18,6 +23,9 @@ extensions/quiz/
     migrations/        ordered migrations (001-name.ts)
     seeders/           idempotent seed data (001-name.ts)
 ```
+
+`make:extension` creates this layout with a working sample; [chapter 14](./14-architecture.md) explains what each layer
+is for and the rules between them.
 
 Rules:
 

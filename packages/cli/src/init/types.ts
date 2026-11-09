@@ -6,6 +6,8 @@ export interface InitAnswers {
   /** Extensions directory relative to the project root. */
   readonly extensionsDir: string
   readonly database: DatabaseChoice
+  /** Connection URL for PostgreSQL or MySQL, written to the env file; empty to fill in later. */
+  readonly databaseUrl: string
   /** Roles of the application; they become `defaultRoles` of the starter extension. */
   readonly roles: readonly string[]
   /** Role granted to the current visitor by the generated permissions plugin. */
@@ -58,6 +60,8 @@ export interface InitPlan {
   readonly scripts: Readonly<Record<string, string>>
   /** Lines to add to `.env.example` (key to line). */
   readonly env: Readonly<Record<string, string>>
+  /** Connection URL to write to the env file, when given. */
+  readonly envUrl: string | undefined
   /** Entries to add to `.gitignore`. */
   readonly gitignore: readonly string[]
   /** Packages to install as dependencies. */

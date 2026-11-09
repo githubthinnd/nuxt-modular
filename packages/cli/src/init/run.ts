@@ -2,7 +2,10 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'pathe'
 import { CliError, type CommandIO } from '../io'
+import { cheatSheet } from '../help'
 import { patchNuxtConfig } from './config-patch'
+import { DATABASE_OPTIONS, DATABASE_URL_ENV, DRIVERS, parseDatabaseChoice, URL_EXAMPLES, validateDatabaseUrl } from './database'
+import { ensureIgnored, writeEnvValue } from './env'
 import { planInit, validateAnswers } from './plan'
 import { detectProject } from './project'
 import { consolaPrompter, type Prompter, SetupCancelled } from './prompter'
@@ -15,6 +18,10 @@ export interface InitOptions {
   readonly guided?: boolean
   readonly dir?: string
   readonly database?: string
+  /** Connection URL for PostgreSQL or MySQL; written to the env file. */
+  readonly databaseUrl?: string
+  /** Env file that receives the connection URL (default `.env`). */
+  readonly envFile?: string
   readonly extension?: string
   /** Comma-separated role names. */
   readonly roles?: string
@@ -30,25 +37,7 @@ export interface InitOptions {
 
 const DOCS = 'https://github.com/githubthinnd/nuxt-modular/blob/master/guide/01-getting-started.md'
 
-const DATABASE_ALIASES: Record<string, DatabaseChoice> = {
-  none: 'none',
-  sqlite: 'sqlite',
-  postgresql: 'postgresql',
-  postgres: 'postgresql',
-  pg: 'postgresql',
-  mysql: 'mysql',
-  mariadb: 'mysql',
-}
-
-function parseDatabase(value: string): DatabaseChoice {
-  const choice = DATABASE_ALIASES[value.toLowerCase()]
-  if (!choice) throw new CliError(`Invalid --database "${value}" (use none, sqlite, postgresql or mysql)`)
-  return choice
-}
-
 const parseRoles = (value: string): string[] => [...new Set(value.split(',').map((role) => role.trim()).filter(Boolean))]
-
-const DRIVER: Record<DatabaseChoice, string | undefined> = { none: undefined, sqlite: undefined, postgresql: 'pg', mysql: 'mysql2' }
 
 export const isTerminal = (): boolean => Boolean(process.stdin.isTTY && process.stdout.isTTY)
 
@@ -57,16 +46,21 @@ async function gather(options: InitOptions, project: ProjectInfo, ask: Prompter 
 
   const database =
     options.database !== undefined
-      ? parseDatabase(options.database)
+      ? parseDatabaseChoice(options.database)
       : ((await ask?.select<DatabaseChoice>('Which database should nuxt-modular and your extensions use?', {
           initial: 'sqlite',
-          options: [
-            { label: 'SQLite', value: 'sqlite', hint: 'zero setup, a local file' },
-            { label: 'PostgreSQL', value: 'postgresql', hint: 'needs the pg driver and a connection URL' },
-            { label: 'MySQL / MariaDB', value: 'mysql', hint: 'needs the mysql2 driver and a connection URL' },
-            { label: 'None', value: 'none', hint: 'state lives in Nitro storage, no migrations' },
-          ],
+          options: DATABASE_OPTIONS,
         })) ?? 'sqlite')
+
+  const exampleUrl = URL_EXAMPLES[database]
+  const databaseUrl =
+    options.databaseUrl ??
+    (exampleUrl && ask
+      ? await ask.text(`Connection URL, for example ${exampleUrl} (leave empty to fill in later)`, {
+          initial: '',
+          validate: (value) => validateDatabaseUrl(database, value),
+        })
+      : '')
 
   const roles =
     options.roles !== undefined
@@ -108,31 +102,32 @@ async function gather(options: InitOptions, project: ProjectInfo, ask: Prompter 
     ? ((await ask?.confirm('Register the Nitro tasks (modular:migrate, modular:seed, ...)?', { initial: true })) ?? true)
     : false
 
-  const driver = DRIVER[database]
+  const driver = DRIVERS[database]
   const installDriver =
     driver && !options.noInstall
       ? ((await ask?.confirm(`Install the ${driver} driver with ${project.packageManager} now?`, { initial: true })) ?? true)
       : false
 
-  return { extensionsDir, database, roles, defaultRole, starter, hostShell, tasks, autoMigrate, installDriver }
+  return { extensionsDir, database, databaseUrl, roles, defaultRole, starter, hostShell, tasks, autoMigrate, installDriver }
 }
 
-function describePlan(io: CommandIO, plan: InitPlan, project: ProjectInfo): void {
+function describePlan(io: CommandIO, plan: InitPlan, project: ProjectInfo, envFile: string): void {
   io.out('\nThis will:')
   for (const file of plan.files) io.out(`  ${existsSync(join(project.root, file.path)) && !file.overwrite ? 'keep   ' : 'create '} ${file.path}`)
   io.out(`  update  ${project.configFile}${plan.configBlock ? ' (module and modular options)' : ' (module)'}`)
   io.out(`  update  package.json (scripts: ${Object.keys(plan.scripts).join(', ')})`)
   for (const key of Object.keys(plan.env)) io.out(`  add     ${key} to .env.example`)
+  if (plan.envUrl) io.out(`  write   ${DATABASE_URL_ENV} to ${envFile}`)
   if (plan.install.length) io.out(`  install ${plan.install.join(', ')}`)
 }
 
-const defaultInstall = (manager: PackageManagerName, packages: readonly string[], cwd: string): void => {
+export const defaultInstall = (manager: PackageManagerName, packages: readonly string[], cwd: string): void => {
   const args = manager === 'npm' ? ['install', ...packages] : ['add', ...packages]
   const result = spawnSync(manager, args, { cwd, stdio: 'inherit', shell: process.platform === 'win32' })
   if (result.status !== 0) throw new CliError(`"${manager} ${args.join(' ')}" failed`)
 }
 
-function hasDependency(root: string, name: string): boolean {
+export function hasDependency(root: string, name: string): boolean {
   try {
     const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as Record<string, Record<string, string> | undefined>
     return Boolean(pkg.dependencies?.[name] ?? pkg.devDependencies?.[name])
@@ -177,7 +172,7 @@ function appendLines(io: CommandIO, root: string, file: string, lines: readonly 
 }
 
 /** Writes everything in the plan. Existing files are never replaced, except the untouched default `app.vue`. */
-export async function applyInit(io: CommandIO, project: ProjectInfo, plan: InitPlan, options: Pick<InitOptions, 'installPackages'> = {}): Promise<void> {
+export async function applyInit(io: CommandIO, project: ProjectInfo, plan: InitPlan, options: Pick<InitOptions, 'installPackages' | 'envFile'> = {}): Promise<void> {
   for (const file of plan.files) writeNew(io, project.root, file.path, file.content, file.overwrite)
 
   const patch = patchNuxtConfig(project.configSource, plan.configBlock)
@@ -195,6 +190,11 @@ export async function applyInit(io: CommandIO, project: ProjectInfo, plan: InitP
     const target = join(project.root, '.env.example')
     const has = existsSync(target) && new RegExp(`^${key}=`, 'm').test(readFileSync(target, 'utf8'))
     if (!has) appendLines(io, project.root, '.env.example', ['', ...value.split('\n')], true)
+  }
+  if (plan.envUrl) {
+    const envFile = options.envFile ?? '.env'
+    writeEnvValue(io, project.root, envFile, DATABASE_URL_ENV, plan.envUrl)
+    ensureIgnored(io, project.root, envFile)
   }
   if (plan.gitignore.length) appendLines(io, project.root, '.gitignore', plan.gitignore, false)
 
@@ -256,19 +256,23 @@ export async function runInit(io: CommandIO, options: InitOptions = {}): Promise
     validateAnswers(answers)
     const plan = planInit(answers, project)
 
-    describePlan(io, plan, project)
+    describePlan(io, plan, project, options.envFile ?? '.env')
     if (ask && !(await ask.confirm('Apply these changes?', { initial: true }))) {
       io.out('Nothing was changed.')
       return 0
     }
 
     io.out('')
-    await applyInit(io, project, plan, options.installPackages ? { installPackages: options.installPackages } : {})
+    await applyInit(io, project, plan, {
+      ...(options.installPackages ? { installPackages: options.installPackages } : {}),
+      ...(options.envFile ? { envFile: options.envFile } : {}),
+    })
 
     io.out(`\nDone. Start the app with: ${devCommand(project.packageManager)}`)
     if (answers.starter) io.out(`The starter extension "${answers.starter}" adds a menu entry, a card on the home page, a page at /${answers.starter} and an API.`)
     for (const note of plan.notes) io.out(`- ${note}`)
-    io.out(`Validate extensions any time: ${project.packageManager === 'npm' ? 'npm run' : project.packageManager} modular:validate`)
+    io.out(`\n${cheatSheet('npx nuxt-modular')}`)
+    io.out(`Or list them with: ${project.packageManager === 'npm' ? 'npm run' : project.packageManager} modular`)
     return 0
   } catch (error) {
     if (error instanceof SetupCancelled) {
