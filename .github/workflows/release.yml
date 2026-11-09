@@ -21,14 +21,39 @@ jobs:
           node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm check
       - name: Tag matches package versions
         run: |
           for pkg in core nuxt cli; do
             v=$(node -p "require('./packages/$pkg/package.json').version")
-            [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "packages/$pkg is $v, tag is $GITHUB_REF_NAME"; exit 1; }
+            [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "::error::packages/$pkg is $v, tag is $GITHUB_REF_NAME"; exit 1; }
           done
-      - run: pnpm -r --filter "./packages/**" publish --access public --provenance --no-git-checks
+      # A version that is already on npm (for example published by hand) must not fail the run.
+      - name: Find versions not yet on npm
+        id: state
+        run: |
+          pending=0
+          for pkg in core nuxt cli; do
+            name=$(node -p "require('./packages/$pkg/package.json').name")
+            v=$(node -p "require('./packages/$pkg/package.json').version")
+            if npm view "$name@$v" version >/dev/null 2>&1; then
+              echo "$name@$v is already published"
+            else
+              echo "$name@$v is not published yet"
+              pending=1
+            fi
+          done
+          echo "pending=$pending" >> "$GITHUB_OUTPUT"
+      - name: Require NPM_TOKEN
+        if: steps.state.outputs.pending == '1'
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          [ -n "$NPM_TOKEN" ] || { echo "::error::Repository secret NPM_TOKEN is missing. Add an npm automation token (Settings > Secrets and variables > Actions), or publish by hand as described in PUBLISHING.md."; exit 1; }
+      - if: steps.state.outputs.pending == '1'
+        run: pnpm install --frozen-lockfile
+      - if: steps.state.outputs.pending == '1'
+        run: pnpm check
+      - if: steps.state.outputs.pending == '1'
+        run: pnpm -r --filter "./packages/**" publish --access public --provenance --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
