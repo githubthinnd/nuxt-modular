@@ -88,6 +88,18 @@ describe('modular.database in nuxt.config', () => {
     expect(result.source).not.toContain('postgresql')
   })
 
+  it('rewrites the comment it generated, so it describes the new database, and keeps comments the user wrote', () => {
+    const postgres = setModularDatabase(CONFIG, "{ connector: 'postgresql' }", ['Database for x. Switch it any time with: npx nuxt-modular db', 'The connection URL comes from the env.'])
+    expect(postgres.source).toContain('connection URL comes from the env')
+    const sqlite = setModularDatabase(postgres.source, "'sqlite:./a.db'", ['Database for x. Switch it any time with: npx nuxt-modular db', 'A local file.'])
+    expect(sqlite.source).toContain("    // A local file.\n    database: 'sqlite:./a.db',")
+    expect(sqlite.source).not.toContain('connection URL comes from')
+    expect(sqlite.source.match(/Switch it any time/g)).toHaveLength(1)
+    const custom = "export default defineNuxtConfig({\n  modular: {\n    // my own note\n    database: 'sqlite:./a.db',\n  },\n})\n"
+    expect(setModularDatabase(custom, 'false', ['A comment']).source).toContain("// my own note\n    database: false,")
+    expect(setModularDatabase(custom, 'false', ['A comment']).source).not.toContain('A comment')
+  })
+
   it('is idempotent and reports snippets when it cannot place the value', () => {
     const once = setModularDatabase(CONFIG, 'false')
     expect(setModularDatabase(once.source, 'false').changed).toBe(false)
@@ -178,6 +190,16 @@ describe('nuxt-modular db', () => {
     expect(installs).toEqual([['npm', ['pg'], cwd]])
     expect(out.join('\n')).toContain('Existing data is not copied')
     expect(out.join('\n')).not.toContain('u:p@')
+  })
+
+  it('ignores .data when the database is SQLite', async () => {
+    nuxtProject()
+    await runDb(io(), { database: 'sqlite', yes: true })
+    expect(read('.gitignore')).toContain('.data')
+    expect(read('nuxt.config.ts')).toContain('A local file, no driver or URL needed.')
+    await runDb(io(), { database: 'postgresql', url: 'postgresql://a/b', envFile: ENV, yes: true, noInstall: true })
+    expect(read('nuxt.config.ts')).toContain('connection URL comes from NUXT_MODULAR_DATABASE_URL')
+    expect(read('nuxt.config.ts')).not.toContain('A local file')
   })
 
   it('switches an existing setup and updates the URL instead of duplicating it', async () => {

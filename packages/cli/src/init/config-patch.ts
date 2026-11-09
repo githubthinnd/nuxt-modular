@@ -217,6 +217,29 @@ export function readModularDatabase(source: string): string | undefined {
   return range ? source.slice(range.start, range.end).trim() : undefined
 }
 
+const GENERATED_MARK = 'Switch it any time with: npx nuxt-modular db'
+
+/**
+ * Rewrites the comment block that `init` or `db` put above `database`, so it describes the new value. A block the
+ * user wrote (without the generated first line) is left alone.
+ */
+function refreshGeneratedComment(source: string, valueStart: number, comment: readonly string[]): string {
+  if (!comment.length) return source
+  const keyAt = source.lastIndexOf('database', valueStart)
+  if (keyAt === -1) return source
+  const lineStart = source.lastIndexOf('\n', keyAt) + 1
+  const indent = /^[ \t]*/.exec(source.slice(lineStart))?.[0] ?? ''
+  const lines = source.slice(0, lineStart).split('\n')
+  lines.pop() // text after the last newline is empty: lineStart is a line start
+  let first = lines.length
+  while (first > 0 && /^\s*\/\//.test(lines[first - 1] as string)) first -= 1
+  const block = lines.slice(first)
+  if (!block.some((line) => line.includes(GENERATED_MARK))) return source
+  const fresh = comment.map((line) => `${indent}// ${line}`)
+  if (block.join('\n') === fresh.join('\n')) return source
+  return `${[...lines.slice(0, first), ...fresh].join('\n')}\n${source.slice(lineStart)}`
+}
+
 /**
  * Sets `modular.database` to `expression` (source text such as `'sqlite:./a.db'` or `{ connector: 'postgresql' }`),
  * keeping the rest of the file as it is. `comment` is written above the property when it is created.
@@ -225,8 +248,9 @@ export function setModularDatabase(source: string, expression: string, comment: 
   const existing = findConfigValue(source, ['modular', 'database'])
   if (existing) {
     const current = source.slice(existing.start, existing.end)
-    if (current.trim() === expression) return { source, changed: false, manual: [] }
-    return { source: `${source.slice(0, existing.start)}${expression}${source.slice(existing.end)}`, changed: true, manual: [] }
+    let next = current.trim() === expression ? source : `${source.slice(0, existing.start)}${expression}${source.slice(existing.end)}`
+    next = refreshGeneratedComment(next, existing.start, comment)
+    return { source: next, changed: next !== source, manual: [] }
   }
   const lines = [...comment.map((line) => `    // ${line}`), `    database: ${expression},`]
   const modular = findConfigValue(source, ['modular'])

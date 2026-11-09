@@ -98,6 +98,7 @@ export async function runDb(io: CommandIO, options: DbOptions = {}): Promise<num
     }
 
     const envFile = options.envFile ?? '.env'
+    if (database === 'sqlite') ensureIgnored(io, project.root, '.data')
     if (example) {
       addEnvExample(io, project.root, DATABASE_URL_ENV, `# Connection URL for nuxt-modular (also used by your migrations)\n${DATABASE_URL_ENV}=${example}`)
       if (url) {
