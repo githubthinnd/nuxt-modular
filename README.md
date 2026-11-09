@@ -34,18 +34,37 @@ from each other's failures, and render consistently on the server and the client
 
 ## Quick start
 
-Inside a Nuxt project (to start one: `npx nuxi@latest init my-app`):
+Three commands take you from nothing to a running app with a working extension:
 
 ```bash
+npx nuxi@latest init my-app --template=minimal --packageManager=pnpm
+cd my-app
 npx nuxi module add nuxt-modular
 ```
 
-The module is installed and registered, then a short guided setup asks about the database, roles, a starter
-extension and a host shell, and writes a working app. Press Enter to accept the defaults. Run it again at any time
-with `npx nuxt-modular init`. Change the database later with `npx nuxt-modular db`; `npx nuxt-modular` lists every
-command.
+Use the **minimal** template: the *module* template is for writing Nuxt modules, not apps. Right after the module is
+installed, a short guided setup asks a few questions (database, roles, a starter extension, a host shell). Press Enter
+to accept the defaults, then start the app:
 
-A plain `pnpm add nuxt-modular` changes nothing in your project. Register the module yourself:
+```bash
+pnpm dev
+```
+
+Open the address Nuxt prints (usually http://localhost:3000). You get a menu, a card contributed by the starter
+extension, and a page at `/hello` with a form that stores items in the database you picked.
+
+**Daily commands** (run them inside your project; `npx nuxt-modular` lists them all):
+
+| I want to | Run |
+|-----------|-----|
+| See every command | `npx nuxt-modular` |
+| Add a complete extension | `npx nuxt-modular make:extension blog --roles admin,editor` |
+| Change the database | `npx nuxt-modular db` |
+| Check my extensions | `npx nuxt-modular validate` |
+| Run the guided setup again | `npx nuxt-modular init` |
+
+Already have a Nuxt app? Run `npx nuxi module add nuxt-modular` in it: files that exist are never overwritten. A plain
+`pnpm add nuxt-modular` changes nothing; register the module yourself instead:
 
 ```ts
 // nuxt.config.ts
@@ -54,15 +73,7 @@ export default defineNuxtConfig({
 })
 ```
 
-```bash
-npx nuxt-modular make:extension quiz
-```
-
-Place an outlet in the host where extensions may contribute UI:
-
-```vue
-<PluginOutlet name="course.tabs" :context="{ courseId }" />
-```
+Something not working? See [Troubleshooting](./guide/12-troubleshooting.md#setup-and-command-line).
 
 The full walkthrough is in [Getting started](./guide/01-getting-started.md).
 

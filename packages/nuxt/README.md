@@ -38,19 +38,37 @@ they appear with **outlets** and who may see them with **permissions**.
 
 ## Quick start
 
-Inside a Nuxt project (to start one: `npx nuxi@latest init my-app`):
+Three commands take you from nothing to a running app with a working extension:
 
 ```bash
+npx nuxi@latest init my-app --template=minimal --packageManager=pnpm
+cd my-app
 npx nuxi module add nuxt-modular
 ```
 
-This installs the module, registers it and asks a few questions (database, roles, a starter extension, a host shell).
-Press Enter to accept the defaults and you get a working app: a menu, a home page with an outlet, and a starter
-extension in the standard layout (controllers, service, repository, composable, components, page and, with a database,
-a migration and a seeder). Run the same setup later with `npx nuxt-modular init`, change the database with
-`npx nuxt-modular db`, and list every command by running `npx nuxt-modular`.
+Use the **minimal** template: the *module* template is for writing Nuxt modules, not apps. Right after the module is
+installed, a short guided setup asks a few questions (database, roles, a starter extension, a host shell). Press Enter
+to accept the defaults, then start the app:
 
-Prefer to wire it up yourself? A plain `pnpm add nuxt-modular` changes nothing; register the module and you are set:
+```bash
+pnpm dev
+```
+
+Open the address Nuxt prints (usually http://localhost:3000). You get a menu, a card contributed by the starter
+extension, and a page at `/hello` with a form that stores items in the database you picked.
+
+**Daily commands** (run them inside your project; `npx nuxt-modular` lists them all):
+
+| I want to | Run |
+|-----------|-----|
+| See every command | `npx nuxt-modular` |
+| Add a complete extension | `npx nuxt-modular make:extension blog --roles admin,editor` |
+| Change the database | `npx nuxt-modular db` |
+| Check my extensions | `npx nuxt-modular validate` |
+| Run the guided setup again | `npx nuxt-modular init` |
+
+Already have a Nuxt app? Run `npx nuxi module add nuxt-modular` in it: files that exist are never overwritten. A plain
+`pnpm add nuxt-modular` changes nothing; register the module yourself instead:
 
 ```ts
 // nuxt.config.ts
@@ -58,6 +76,10 @@ export default defineNuxtConfig({
   modules: ['nuxt-modular'],
 })
 ```
+
+Something not working? See [Troubleshooting](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/12-troubleshooting.md#setup-and-command-line).
+
+### Write an extension by hand
 
 Create an extension (or run `npx nuxt-modular make:extension quiz`):
 

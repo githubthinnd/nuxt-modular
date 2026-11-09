@@ -41,4 +41,15 @@ write outside the extension directory and refuse to overwrite without `--force`.
 Use `validate --strict` in CI to catch broken extensions before a build.
 Migrations and seeders run through Nitro tasks; see the [user guide](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/07-data.md).
 
+## A typical session
+
+```bash
+npx nuxt-modular                                    # see every command
+npx nuxt-modular init                               # guided setup of the current Nuxt project
+npx nuxt-modular make:extension blog --roles admin  # a complete extension in the standard layout
+npx nuxt-modular make:service blog posts            # add a layer to it
+npx nuxt-modular db                                 # switch the database
+npx nuxt-modular validate --strict                  # check everything (use it in CI)
+```
+
 Full documentation: [CLI chapter](https://github.com/githubthinnd/nuxt-modular/blob/master/guide/10-cli.md) · MIT

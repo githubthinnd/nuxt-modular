@@ -1,5 +1,53 @@
 # 12. Troubleshooting and FAQ
 
+## Setup and command line
+
+**`nuxi module add` says no usable `@nuxt/cli` was found (or nothing happens).**
+It must run inside a Nuxt project. Create one first: `npx nuxi@latest init my-app --template=minimal`, then
+`cd my-app`.
+
+**I picked the "module" template and the setup does not make sense.**
+That template is a starter for writing a Nuxt module, not an application. Delete the folder and create the project again
+with `--template=minimal`.
+
+**No questions appeared after `nuxi module add`.**
+They are asked once per project (Nuxt records it in `.nuxtrc`), in a terminal, outside CI, and only right after
+`nuxi module add`. Run `npx nuxt-modular init` whenever you want them. `NUXT_MODULAR_INIT=0` turns them off.
+
+**`pnpm did not run build scripts for esbuild` or `ERR_PNPM_IGNORED_BUILDS`.**
+That is a pnpm safety feature, not nuxt-modular. The package you asked for was still added; approve the build scripts
+with `pnpm approve-builds` when you want pnpm to run them.
+
+**`Port 3000 is in use, using port 3001 instead.`**
+Another server already uses 3000. Open the address Nuxt prints, or stop the other server. Check that you started
+`pnpm dev` from your project folder: running it from another folder starts a different app.
+
+**`command not found: nuxt-modular`.**
+Use `npx nuxt-modular` or `pnpm modular` inside a project that has the module installed. Without the module, use
+`npx @nuxt-modular/cli`.
+
+**`No nuxt.config found`.**
+You are not in a Nuxt project folder. `cd` into it, or create one (`npx nuxi@latest init my-app --template=minimal`).
+
+**The menu entry or the card of my extension is not visible.**
+The visitor holds no role that the extension grants. The generated `app/plugins/modular-permissions.ts` reads the role
+from the `role` cookie (default: the role you chose); the extension lists who may see it in `defaultRoles` in its
+`manifest.ts`. Add the role there, or create the extension with `make:extension <id> --roles admin,editor`.
+
+**`No database URL: set the NUXT_MODULAR_DATABASE_URL environment variable`.**
+You chose PostgreSQL or MySQL and left the connection URL empty. Put it in `.env` (copy `.env.example`), or run
+`npx nuxt-modular db --url postgresql://user:password@localhost:5432/app`. To try the app without installing a
+server, switch to SQLite: `npx nuxt-modular db --database sqlite`.
+
+**`ECONNREFUSED` or an authentication error from PostgreSQL or MySQL.**
+The URL is reachable only if the database server is running and the user, password, host, port and database name are
+right. Check the URL with the database's own client (`psql "$NUXT_MODULAR_DATABASE_URL"`) before blaming the app.
+
+**I switched databases and my data is gone.**
+A new database starts empty and data is not copied. The migrations run again on it when the server starts. Extensions
+whose repository still uses Nitro storage keep writing there until the repository is rewritten with SQL
+([chapter 14](./14-architecture.md)).
+
 ## Build errors
 
 **`Invalid manifest for extension "quiz" (…/manifest.ts): - slots[0].target: Must be a dot-namespaced outlet name`**

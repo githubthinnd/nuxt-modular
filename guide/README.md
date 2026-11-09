@@ -20,6 +20,9 @@ templates: installation, concepts, every feature, deployment and troubleshooting
 | [13. API reference](./13-api-reference.md) | Composables, server utilities, core exports |
 | [14. Extension architecture](./14-architecture.md) | The standard layout: controllers, services, repositories, composables, components |
 
+In a hurry? The [short path](./01-getting-started.md#the-short-path) in chapter 1 takes three commands to a running app,
+and [Troubleshooting](./12-troubleshooting.md#setup-and-command-line) covers the usual first-run problems.
+
 New here? Read chapters 1 and 2, then jump to the feature you need. A runnable example lives in the
 [`playground/`](https://github.com/githubthinnd/nuxt-modular/tree/master/playground) directory of the repository.
 

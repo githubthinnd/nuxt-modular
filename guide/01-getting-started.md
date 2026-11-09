@@ -6,6 +6,38 @@
 - Node.js **22.12 or newer**
 - A package manager: pnpm, npm or yarn
 
+## The short path
+
+```bash
+npx nuxi@latest init my-app --template=minimal --packageManager=pnpm
+cd my-app
+npx nuxi module add nuxt-modular        # answer a few questions, or press Enter for the defaults
+pnpm dev
+```
+
+Choose the **minimal** template; the *module* template is for writing Nuxt modules, not apps. Run every command from
+the project folder (`my-app`), not from its parent.
+
+When `pnpm dev` is up, open the address Nuxt prints and check three things:
+
+1. The header shows a menu entry for **Hello** (built from the starter extension's `navigation`).
+2. The home page shows a card from the extension (it renders in the `dashboard.widgets` outlet).
+3. `/hello` has a form. Add an item, try the same title again (the service answers `409`), leave it empty (the form
+   shows the message before sending), remove an item.
+
+If one of them is missing, see [Troubleshooting](./12-troubleshooting.md#setup-and-command-line).
+
+### Where things live
+
+| What | Where |
+|------|-------|
+| Which database | `modular.database` in `nuxt.config.ts` (change it with `npx nuxt-modular db`) |
+| Database connection URL | `NUXT_MODULAR_DATABASE_URL` in `.env` (copy `.env.example`) |
+| Who the visitor is (roles) | `app/plugins/modular-permissions.ts` |
+| The menu and the outlets | `app/app.vue` and your pages (`<PluginOutlet name="..." />`) |
+| Your extensions | `extensions/<id>/`, each described by its `manifest.ts` |
+| Every command | `npx nuxt-modular` (or `pnpm modular`) |
+
 ## Install
 
 There are two ways: a guided setup that builds a working host for you, or a manual install where you wire things up

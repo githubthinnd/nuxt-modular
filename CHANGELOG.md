@@ -6,6 +6,18 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- `nuxt-modular db` rewrites the comment above `modular.database` when it switches databases, so it no longer says
+  "connection URL comes from .env" for SQLite; comments you wrote are left alone. It also adds `.data` to `.gitignore`
+  for SQLite.
+
+### Changed
+
+- Documentation: a three-command quick start, a "where things live" map, a typical CLI session, and troubleshooting for
+  the first-run problems (wrong template, no questions shown, missing database URL, pnpm build-script warning, extension
+  not visible). The README generated in each extension now has a "Try it" section and an aligned folder tree.
+
 ## [1.2.0] - 2026-11-09
 
 ### Added
