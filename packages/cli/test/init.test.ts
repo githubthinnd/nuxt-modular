@@ -358,6 +358,25 @@ describe('runInit', () => {
     expect(err.join('\n')).toContain('Install it yourself: npm install pg')
   })
 
+  it('trusts package.json over the exit code when the package manager adds the driver but exits with an error', async () => {
+    nuxtProject({ lock: 'pnpm-lock.yaml' })
+    const prompter = scripted({ 'Which database': 'postgresql' })
+    expect(
+      await runInit(io(), {
+        prompter,
+        interactive: true,
+        installPackages: () => {
+          const pkg = JSON.parse(read('package.json'))
+          write('package.json', JSON.stringify({ ...pkg, dependencies: { ...pkg.dependencies, pg: '^8.23.1' } }))
+          throw new Error('"pnpm add pg" failed')
+        },
+      }),
+    ).toBe(0)
+    expect(err.join('\n')).not.toContain('Install it yourself')
+    expect(out.join('\n')).toContain('installed pg')
+    expect(out.join('\n')).toContain('pnpm approve-builds')
+  })
+
   it('--yes uses defaults and flags: sqlite, admin and member, starter hello', async () => {
     nuxtProject()
     expect(await main(['init', '--yes', '--roles', 'owner,guest', '--extension', 'shop', '--no-shell'], io())).toBe(0)

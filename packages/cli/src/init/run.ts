@@ -132,6 +132,15 @@ const defaultInstall = (manager: PackageManagerName, packages: readonly string[]
   if (result.status !== 0) throw new CliError(`"${manager} ${args.join(' ')}" failed`)
 }
 
+function hasDependency(root: string, name: string): boolean {
+  try {
+    const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as Record<string, Record<string, string> | undefined>
+    return Boolean(pkg.dependencies?.[name] ?? pkg.devDependencies?.[name])
+  } catch {
+    return false
+  }
+}
+
 function writeNew(io: CommandIO, root: string, path: string, content: string, overwrite: boolean | undefined): void {
   const target = join(root, path)
   if (existsSync(target) && !overwrite) return io.out(`  kept     ${path} (already exists)`)
@@ -194,8 +203,16 @@ export async function applyInit(io: CommandIO, project: ProjectInfo, plan: InitP
     try {
       await (options.installPackages ?? defaultInstall)(project.packageManager, plan.install, project.root)
     } catch (error) {
-      io.err(`warning: ${error instanceof Error ? error.message : String(error)}`)
-      io.err(`Install it yourself: ${project.packageManager} ${project.packageManager === 'npm' ? 'install' : 'add'} ${plan.install.join(' ')}`)
+      // A package manager can exit with an error after adding the package (pnpm does when a dependency has build
+      // scripts that were not approved), so trust package.json over the exit code.
+      const missing = plan.install.filter((name) => !hasDependency(project.root, name))
+      if (!missing.length) {
+        io.out(`  installed ${plan.install.join(', ')} (${project.packageManager} finished with a warning)`)
+        if (project.packageManager === 'pnpm') io.out('  If pnpm mentioned ignored build scripts, review them with: pnpm approve-builds')
+      } else {
+        io.err(`warning: ${error instanceof Error ? error.message : String(error)}`)
+        io.err(`Install it yourself: ${project.packageManager} ${project.packageManager === 'npm' ? 'install' : 'add'} ${missing.join(' ')}`)
+      }
     }
   }
 }

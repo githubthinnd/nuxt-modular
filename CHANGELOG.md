@@ -6,6 +6,11 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- `nuxt-modular init` no longer reports a failed driver install when the package manager added the package but exited
+  with an error (pnpm does this when another dependency has unapproved build scripts); it checks `package.json` instead.
+
 ### Changed
 
 - Release workflow: publishes with npm Trusted Publishing (no `NPM_TOKEN` secret), pins its actions by commit,
