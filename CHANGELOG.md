@@ -6,6 +6,8 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-09
+
 ### Fixed
 
 - `nuxt-modular db` rewrites the comment above `modular.database` when it switches databases, so it no longer says
