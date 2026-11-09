@@ -6,6 +6,8 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-09
+
 ### Added
 
 - **Guided setup**: `npx nuxi module add nuxt-modular` now asks a few questions right after installing (database, roles,
