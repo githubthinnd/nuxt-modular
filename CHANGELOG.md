@@ -6,6 +6,17 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-11-09
+
+### Changed
+
+- Documentation: the `nuxt-modular` package README no longer uses emoji; the features list and the comparison table are
+  plain text. The repository README has an overview, quick start and packages section.
+- Tooling: `pnpm dev:prepare` also generates the module's `.nuxt` types, which fixes the Playwright E2E job on CI; the
+  Release workflow skips versions that are already on npm.
+
+No runtime changes. The three packages stay on the same version.
+
 ## [1.0.1] - 2026-11-09
 
 First version published to npm, with the same content as 1.0.0. `1.0.0` was never published: the number is permanently
