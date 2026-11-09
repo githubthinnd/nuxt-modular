@@ -11,6 +11,9 @@ coverage
 .env.*
 !.env.example
 docs
+# Local maintainer notes, never committed
+PUBLISHING.md
+
 # Claude Code (local tooling, never committed)
 .claude/
 CLAUDE.md

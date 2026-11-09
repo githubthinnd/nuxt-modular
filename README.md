@@ -111,7 +111,7 @@ dashboard, persist toggles for everyone as `admin`, and remove extensions at bui
 ### Continuous integration
 
 `.github/workflows/ci.yml` runs `pnpm check`, the database integration jobs and the E2E suite, and needs a committed,
-complete `pnpm-lock.yaml`. Releases are described in [PUBLISHING.md](./PUBLISHING.md).
+complete `pnpm-lock.yaml`. Releases are published by `.github/workflows/release.yml` when a `v*` tag is pushed.
 
 ## License
 
