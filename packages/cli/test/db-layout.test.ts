@@ -41,6 +41,8 @@ function nuxtProject(config = CONFIG) {
   write('nuxt.config.ts', config)
   write('package.json', `${JSON.stringify({ name: 'demo', scripts: {}, dependencies: { nuxt: '^4.0.0' } }, null, 2)}\n`)
   write('.gitignore', 'node_modules\n')
+  // A lockfile pins the package manager, so the tests do not depend on the one that runs them.
+  write('package-lock.json', '{}')
 }
 
 beforeEach(() => {
