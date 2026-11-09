@@ -21,16 +21,20 @@ in the spirit of [Laravel Modules](https://github.com/nWidart/laravel-modules) a
 the Vue ecosystem. Teams ship features as self-contained **extensions** (a folder with a `manifest.ts`); the host decides where
 they appear with **outlets** and who may see them with **permissions**.
 
-- 🧩 **Outlets and slots**: place `<PluginOutlet name="course.tabs" />` in the host; extensions contribute components to it.
-- 🧭 **Navigation, pages, plugins**: extensions add menu entries, routes and Nuxt plugins.
-- 🔐 **Permissions**: capability-based gating (`anyOf` / `allOf`) that is identical on server and client.
-- 🛡️ **Failure isolation**: a crashing extension shows a fallback; the page still renders, also during SSR.
-- 🧪 **Hydration-safe**: deterministic ordering and serializable state, so no hydration mismatch.
-- 🔌 **Full-stack**: extension `server/` folders become Nitro routes; an **action/filter hook bus** connects extensions.
-- 🎚️ **Feature toggles and flags**: switch an extension off for everyone at runtime, or remove it from the build.
-- 🗄️ **Databases**: **SQLite, PostgreSQL and MySQL/MariaDB** with ordered **migrations** and **seeders**, an atomic lock and a typed `db`.
-- ⚙️ **Settings and compatibility**: per-extension config, semver `requires`, dependency graph with cycle detection.
-- 🛠️ **Tooling**: scaffolding CLI (`make:extension`, `validate`), Nitro tasks, a Nuxt DevTools tab, strict TypeScript types.
+## Features
+
+| Capability | What you get |
+|------------|--------------|
+| **Outlets and slots** | Place `<PluginOutlet name="course.tabs" />` in the host; extensions contribute components to it. |
+| **Navigation, pages, plugins** | Extensions add menu entries, routes and Nuxt plugins. |
+| **Permissions** | Capability-based gating (`anyOf` / `allOf`), identical on server and client. |
+| **Failure isolation** | A crashing extension renders a fallback; the rest of the page still renders, also during SSR. |
+| **Hydration safety** | Deterministic ordering and serializable state, so there is no hydration mismatch. |
+| **Full-stack extensions** | An extension's `server/` folder becomes Nitro routes; an action/filter hook bus connects extensions. |
+| **Feature toggles** | Switch an extension off for everyone at runtime, or remove it from the build. |
+| **Databases** | SQLite, PostgreSQL and MySQL/MariaDB with ordered migrations, seeders, an atomic lock and a typed `db`. |
+| **Settings and compatibility** | Per-extension config, semver `requires` and a dependency graph with cycle detection. |
+| **Tooling** | Scaffolding CLI (`make:extension`, `validate`), Nitro tasks, a Nuxt DevTools tab and strict TypeScript types. |
 
 ## Quick start
 
@@ -116,13 +120,13 @@ Put the URL in `NUXT_MODULAR_DATABASE_URL` for production. See **[Databases, mig
 ## How it compares
 
 | | nuxt-modular | Nuxt layers | Nuxt modules | Micro-frontends |
-|---|---|---|---|---|
-| Add features without editing host templates | ✅ outlets | ⚠️ override files | ⚠️ build-time only | ✅ |
-| Runtime activation (feature flags) | ✅ | ❌ | ❌ | ✅ |
-| Permission-gated UI, SSR-consistent | ✅ | ❌ | ❌ | ⚠️ |
-| Crash isolation per extension | ✅ | ❌ | ❌ | ✅ |
-| Migrations, seeders, server hook bus | ✅ | ❌ | ❌ | ❌ |
-| One build, one Vue app, full SSR | ✅ | ✅ | ✅ | ❌ |
+|---|:---:|:---:|:---:|:---:|
+| Add features without editing host templates | Yes (outlets) | Partial (file overrides) | Partial (build time only) | Yes |
+| Runtime activation (feature flags) | Yes | No | No | Yes |
+| Permission-gated UI, SSR-consistent | Yes | No | No | Partial |
+| Crash isolation per extension | Yes | No | No | Yes |
+| Migrations, seeders, server hook bus | Yes | No | No | No |
+| One build, one Vue app, full SSR | Yes | Yes | Yes | No |
 
 nuxt-modular complements layers: extensions can ship inside a layer or an npm package. It is not a micro-frontend system:
 extensions are compiled into the host build, which is what makes SSR and hydration reliable.
