@@ -283,9 +283,9 @@ describe('detectProject', () => {
 
   it('detects the package manager from lockfiles, packageManager and the user agent', () => {
     expect(detectPackageManager(cwd, 'yarn/4.0')).toBe('yarn')
-    expect(detectPackageManager(cwd, undefined)).toBe('npm')
+    expect(detectPackageManager(cwd, '')).toBe('npm')
     write('bun.lock', '')
-    expect(detectPackageManager(cwd, undefined)).toBe('bun')
+    expect(detectPackageManager(cwd, '')).toBe('bun')
   })
 })
 
