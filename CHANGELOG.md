@@ -6,6 +6,8 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-09
+
 ### Fixed
 
 - `nuxt-modular init` no longer reports a failed driver install when the package manager added the package but exited
