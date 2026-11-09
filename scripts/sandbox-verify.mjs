@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Verifies the monorepo in an environment where `pnpm install` cannot run
- * (e.g. the Claude Code sandbox, which blocks the pnpm store lock and local
+ * (e.g. a restricted sandbox, which blocks the pnpm store lock and local
  * ports). It mirrors the repo into a temp directory, rewrites pnpm-only
  * protocols (`catalog:`, `workspace:*`) into plain versions, installs with
  * npm workspaces and runs every check that needs no network port.

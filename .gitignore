@@ -11,8 +11,14 @@ coverage
 .env.*
 !.env.example
 docs
+# Claude Code (local tooling, never committed)
+.claude/
 CLAUDE.md
+CLAUDE.local.md
 # Playwright
 test-results
 playwright-report
 blob-report
+
+# Written by Nuxt for the playground (records module setup versions)
+.nuxtrc
