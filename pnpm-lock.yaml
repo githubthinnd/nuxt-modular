@@ -186,8 +186,8 @@ catalogs:
       specifier: ^24.0.0
       version: 24.19.2
     '@vue/test-utils':
-      specifier: ^2.5.1
-      version: 2.5.1
+      specifier: ^2.6.0
+      version: 2.6.0
     consola:
       specifier: ^3.4.2
       version: 3.4.2
@@ -366,7 +366,7 @@ importers:
         version: 4.6.4
       '@vue/test-utils':
         specifier: 'catalog:'
-        version: 2.5.1(@vue/compiler-dom@3.5.45)(@vue/server-renderer@3.5.45)(vue@3.5.45(typescript@5.9.3))
+        version: 2.6.0(@vue/compiler-dom@3.5.45)(@vue/server-renderer@3.5.45)(vue@3.5.45(typescript@5.9.3))
       happy-dom:
         specifier: 'catalog:'
         version: 21.0.4
@@ -1714,8 +1714,8 @@ packages:
   '@vue/shared@3.5.45':
     resolution: {integrity: sha512-ue9fgHmVNPlP7iW3+cxoBX/Cnlw53dHlVSw0JKGY6z1lObg8pHoj928M2nzG4/yVsMZ3NaRZ2s2z61uC16NDwQ==}
 
-  '@vue/test-utils@2.5.1':
-    resolution: {integrity: sha512-V/4a99odJ7hapr0bRt35XxljGk8hefq31gSOnlKTcEq2fUeoj2qb+FcpJYfQu4qfYhW9Ug+O2+CZ3QmZ7gXDzA==}
+  '@vue/test-utils@2.6.0':
+    resolution: {integrity: sha512-kTB6s2p34cA/xXSpt17G0enU9A3F3pdm+o5GZgE3WGXXXpXJ5SVBsRhgCJNCc+ekGAzY0T7Hjyo5yEfwencBlg==}
     peerDependencies:
       '@vue/compiler-dom': 3.x
       '@vue/server-renderer': 3.x
@@ -4475,8 +4475,7 @@ snapshots:
 
   '@dxup/unimport@0.1.2': {}
 
-  '@electric-sql/pglite@0.5.15':
-    optional: true
+  '@electric-sql/pglite@0.5.15': {}
 
   '@esbuild/aix-ppc64@0.25.12':
     optional: true
@@ -5669,7 +5668,7 @@ snapshots:
 
   '@vue/shared@3.5.45': {}
 
-  '@vue/test-utils@2.5.1(@vue/compiler-dom@3.5.45)(@vue/server-renderer@3.5.45)(vue@3.5.45(typescript@5.9.3))':
+  '@vue/test-utils@2.6.0(@vue/compiler-dom@3.5.45)(@vue/server-renderer@3.5.45)(vue@3.5.45(typescript@5.9.3))':
     dependencies:
       '@vue/compiler-dom': 3.5.45
       js-beautify: 2.0.3
@@ -5757,8 +5756,7 @@ snapshots:
       postcss: 8.5.32
       postcss-value-parser: 4.2.0
 
-  aws-ssl-profiles@1.1.2:
-    optional: true
+  aws-ssl-profiles@1.1.2: {}
 
   b4a@1.9.0: {}
 
@@ -6321,7 +6319,6 @@ snapshots:
   generate-function@2.3.1:
     dependencies:
       is-property: 1.0.2
-    optional: true
 
   generic-names@4.0.0:
     dependencies:
@@ -6426,7 +6423,6 @@ snapshots:
   iconv-lite@0.7.3:
     dependencies:
       safer-buffer: 2.1.2
-    optional: true
 
   ieee754@1.2.1: {}
 
@@ -6506,8 +6502,7 @@ snapshots:
 
   is-path-inside@4.0.0: {}
 
-  is-property@1.0.2:
-    optional: true
+  is-property@1.0.2: {}
 
   is-reference@1.2.1:
     dependencies:
@@ -6667,8 +6662,7 @@ snapshots:
 
   lodash.uniq@4.5.0: {}
 
-  long@5.3.2:
-    optional: true
+  long@5.3.2: {}
 
   lru-cache@11.5.3: {}
 
@@ -6676,8 +6670,7 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
-  lru.min@1.1.5:
-    optional: true
+  lru.min@1.1.5: {}
 
   magic-regexp@0.11.2(esbuild@0.28.2)(rolldown@1.2.16)(rollup@4.67.5)(vite@8.3.6(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)):
     dependencies:
@@ -6804,12 +6797,10 @@ snapshots:
       lru.min: 1.1.5
       named-placeholders: 1.1.6
       sql-escaper: 1.5.2
-    optional: true
 
   named-placeholders@1.1.6:
     dependencies:
       lru.min: 1.1.5
-    optional: true
 
   nanoid@3.3.20: {}
 
@@ -7594,8 +7585,7 @@ snapshots:
 
   safe-buffer@5.2.1: {}
 
-  safer-buffer@2.1.2:
-    optional: true
+  safer-buffer@2.1.2: {}
 
   sax@1.6.1: {}
 
@@ -7679,8 +7669,7 @@ snapshots:
 
   split2@4.2.0: {}
 
-  sql-escaper@1.5.2:
-    optional: true
+  sql-escaper@1.5.2: {}
 
   srvx@1.0.5: {}
 
